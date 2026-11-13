@@ -24,6 +24,10 @@ const {launchBrowser,artifactPath}=require('./browser-support.cjs');
  await page.setViewportSize({width:375,height:812});
  await page.screenshot({path:artifactPath('speechboard-setup-mobile.png'),fullPage:true});
  if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)) throw Error('mobile setup overflow');
+ // 상단 버튼 3개는 OS 글꼴에 따라 너비가 달라 375px만으로는 macOS에서 잡히지 않음 → 더 좁은 폭에서도 확인
+ await page.setViewportSize({width:320,height:812});
+ if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)) throw Error('narrow mobile setup overflow');
+ await page.setViewportSize({width:375,height:812});
  await page.locator('#demo-start').click();
  await page.getByRole('button',{name:'답변 끝내기 (Esc)'}).click();
  await page.locator('#review-time').waitFor(); // 복기 화면 도착 신호(#reflection 은 '전체 복기' 탭 안이라 숨겨져 있음)
