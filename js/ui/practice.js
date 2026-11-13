@@ -32,9 +32,9 @@ function template(settings) {
   return `
   <div class="practice answer self-review ${settings.focusMode ? 'focus-mode' : ''}">
     <div class="qline">
-      ${badge({ label: '질문', variant: 'secondary' })}
-      <b class="q">${escapeHtml(settings.question || '자유 답변')}</b>
-      <span class="hint" id="record-state" role="status">카운트다운 후 답변 시작</span>
+      ${badge({ label: '이름표', variant: 'secondary' })}
+      <b class="q">${escapeHtml(settings.question || '이름표 없음')}</b>
+      <span class="hint" id="record-state" role="status">카운트다운 후 모니터링 시작</span>
       <div class="clock" id="p-time" data-status="idle"><span class="clock-label" id="t-time">남은 시간</span>
         <b id="v-time">${total}</b><span class="clock-total">/ ${total}</span></div>
     </div>
@@ -61,7 +61,7 @@ function template(settings) {
           <span class="badge" data-variant="outline" id="part-eye" data-ok="true">눈 <b>—</b></span></div><p class="hint gaze-detail" id="gaze-quality"></p></div>
       </aside>
     </div>
-    <p class="focus-note hint">측정값은 숨겨져 있어요. 답변이 끝나면 복기 화면에서 영상과 함께 볼 수 있어요.</p>
+    <p class="focus-note hint">측정값은 숨겨져 있어요. 끝나면 분석 화면에서 영상과 함께 볼 수 있어요.</p>
   </div>`;
 }
 
@@ -70,7 +70,7 @@ function topActions(settings, demo) {
   return `<span class="badge rec-badge" data-variant="destructive" id="rec-badge" hidden>● 녹화 중</span>
     ${button({ label: settings.focusMode ? '측정값 보기' : '측정값 숨기기', id: 'toggle-metrics', variant: 'outline', attrs: `aria-pressed="${!settings.focusMode}"` })}
     ${demo ? button({ label: '실제 카메라로 전환', id: 'real-camera', variant: 'ghost' }) : ''}
-    ${button({ label: '답변 끝내기 (Esc)', id: 'end-answer', variant: 'destructive' })}`;
+    ${button({ label: '모니터링 끝내기 (Esc)', id: 'end-answer', variant: 'destructive' })}`;
 }
 
 const $ = (id) => root.querySelector(`#${id}`);
@@ -235,7 +235,7 @@ function renderGaze() {
     part($('part-eye'), '눈', v.eye.ok || v.faceMissing, v.eye.dir);
     const detail=$('gaze-quality');
     const source={both:'양쪽 눈',L:'왼쪽 눈만',R:'오른쪽 눈만',avg:'눈 평균',none:'사용 가능한 눈 없음'}[g.eye?.source]??'';
-    detail.textContent=`${source}${g.eye?.method==='iris'?' · 홍채 방식(실험)':''}${s.recalib?' · 카메라와의 거리가 달라졌습니다. 다음 답변 전 재보정하세요.':''}`;
+    detail.textContent=`${source}${g.eye?.method==='iris'?' · 홍채 방식(실험)':''}${s.recalib?' · 카메라와의 거리가 달라졌습니다. 다음 모니터링 전 재보정하세요.':''}`;
     const ang = $('angles');
     ang.hidden = v.faceMissing;
     if (!v.faceMissing) {
@@ -279,7 +279,7 @@ async function finish() {
   const total = s.phase === 'live' ? t() : 0;
   session.phase = 'done';
   cancelAnimationFrame(raf);
-  setText($('record-state'), '답변을 정리하는 중…');
+  setText($('record-state'), '기록을 정리하는 중…');
   const media = await (session.recording?.stop() ?? Promise.resolve({ blob: null, message: '녹화가 시작되지 않았습니다.' }));
   if (s !== session) return;
   const demo = !!app.sensors.audio?.demo || !!app.sensors.gaze?.demo;

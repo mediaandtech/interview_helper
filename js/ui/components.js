@@ -128,7 +128,7 @@ export function statGrid(items) {
   return `<div class="stat-grid">${items.map((it) => `<div class="stat"><span class="stat-label">${esc(it.label)}</span><b class="stat-value">${esc(it.value)}</b>${it.sub ? `<span class="stat-sub">${esc(it.sub)}</span>` : ''}</div>`).join('')}</div>`;
 }
 
-/** 답변 중 지표 카드(색 없음, 중립) */
+/** 모니터링 중 지표 카드(색 없음, 중립) */
 export function metricCard({ id, title, numId, stateId, extraHtml = '' }) {
   return `<div class="card metric" id="${esc(id)}" data-status="idle"><div class="metric-head"><span class="metric-title">${esc(title)}</span><span class="metric-num" id="${esc(numId)}">—</span></div><div class="metric-state" id="${esc(stateId)}">측정 대기</div>${extraHtml}</div>`;
 }
@@ -146,10 +146,10 @@ export function dataTable({ columns, rowsHtml }) {
   return `<div class="table-container"><table class="table"><thead><tr>${columns.map((c) => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${rowsHtml.join('')}</tbody></table></div>`;
 }
 
-const STEPS = [['setup', '질문 설정'], ['practice', '답변'], ['report', '복기']];
+const STEPS = [['setup', '준비'], ['practice', '모니터링'], ['report', '분석']];
 
 /** 상단 바: 앱 이름 · 단계 · 화면별 버튼 자리(#topbar-right) */
 export function topBar({ step }) {
   const steps = STEPS.map(([k, label]) => `<span${k === step ? ' aria-current="step"' : ''}>${label}</span>`).join('<span class="step-sep" aria-hidden="true">›</span>');
-  return `<div class="topbar"><div class="brand">답변 복기</div><nav class="steps" aria-label="진행 단계">${steps}</nav><div class="topbar-right" id="topbar-right"></div></div>`;
+  return `<div class="topbar"><div class="brand">셀프 모니터</div><nav class="steps" aria-label="진행 단계">${steps}</nav><div class="topbar-right" id="topbar-right"></div></div>`;
 }

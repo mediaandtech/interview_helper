@@ -51,7 +51,7 @@ function finish() {
     <div class="intervals">${dataTable({columns:['안내 동작','기본 일치','홍채 일치','선택 방식 미측정','시작→첫 일치'],rowsHtml:rows})}</div>
     <p class="hint">눈 감김·가림 확인은 시선 미측정 비율이 높을 수 있습니다. 보정값을 이 표본으로 다시 학습하거나 계산 방식을 자동 선택하지 않습니다. 손 가림은 영상 추정이라 확정적으로 감지되지 않을 수 있습니다.</p>
     <div class="inline">${button({label:'기본 방식 사용',id:'gt-use-blend',variant:'outline'})}${button({label:'홍채 방식 사용 · 실험',id:'gt-use-iris',variant:'outline',attrs:Object.keys(st.calib?.iris0??{}).length?'':'disabled'})}${button({label:'결과 다운로드',id:'gt-export',variant:'outline'})}</div><p id="gt-selected" class="hint" role="status"></p></section>`;
-  const choose=method=>{app.settings={...app.settings,eyeMethod:method};$('gt-selected').textContent=`다음 답변의 계산 방식: ${method==='iris'?'홍채 방식(실험)':'기본 방식'}. 답변 전 준비 확인을 다시 진행하세요.`;};
+  const choose=method=>{app.settings={...app.settings,eyeMethod:method};$('gt-selected').textContent=`다음 모니터링의 계산 방식: ${method==='iris'?'홍채 방식(실험)':'기본 방식'}. 시작 전 준비 확인을 다시 진행하세요.`;};
   $('gt-use-blend').onclick=()=>choose('blendshape');$('gt-use-iris').onclick=()=>choose('iris');
   $('gt-export').onclick=()=>{
     const blob=new Blob([JSON.stringify({calibration:st.calib,method:app.settings?.eyeMethod??'blendshape',results:st.results,observations:st.recorded},null,2)],{type:'application/json'});

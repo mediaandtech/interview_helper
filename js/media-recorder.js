@@ -1,7 +1,7 @@
 // 카운트다운 후 사용자가 선택한 로컬 녹화만 수행. 원본 센서는 정지하지 않습니다.
 export function startRecording(sensors, enabled, env = globalThis) {
   const unavailable = (message) => ({ message, stop: async () => ({ blob: null, message }) });
-  if (!enabled) return unavailable('녹화하지 않은 답변입니다.');
+  if (!enabled) return unavailable('녹화하지 않은 기록입니다.');
   const tracks = [sensors.gaze?.video?.srcObject, sensors.audio?.stream]
     .flatMap(s => s?.getTracks() ?? []).filter(t => t.readyState === 'live');
   if (!tracks.length) return unavailable('녹화할 실제 카메라·마이크가 없습니다.');

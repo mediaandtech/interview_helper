@@ -1,4 +1,4 @@
-// 자기 복기: 로컬 재생, 관찰값, 사용자가 남긴 메모. 자동 평가 없음.
+// 스스로 분석: 로컬 재생, 관찰값, 사용자가 남긴 메모. 자동 평가 없음.
 import { buildReview, nearestSample } from '../analysis/review.js';
 import { GAZE_REASON_TEXT } from '../analysis/gaze-logic.js';
 import { formatClock } from '../util/time.js';
@@ -23,12 +23,12 @@ function stats(r) {
     { label: '기준 대비 음량', value: n(r.avgDeltaDb, ' dB', 1), sub: `발화 추정 ${r.speakingSec.toFixed(1)}초 기준` },
     { label: '음량 변화 폭', value: n(r.volumeStdDb, ' dB', 1), sub: '발화 중 음량이 흔들린 정도(표준편차)' },
     { label: '음높이 변화량', value: n(r.pitchSt, ' 반음', 1), sub: '발화 중 검출한 음높이의 분산 정도' },
-    { label: '답변 시간', value: formatClock(r.durationSec), sub: `표본 기록 ${r.sampledSec.toFixed(1)}초` },
+    { label: '모니터링 시간', value: formatClock(r.durationSec), sub: `표본 기록 ${r.sampledSec.toFixed(1)}초` },
   ]);
 }
 
 function player(session, id) {
-  return session.url ? `<video id="${id}" controls playsinline preload="metadata" src="${esc(session.url)}" aria-label="${id === 'answer-player' ? '현재' : '이전'} 답변 재생"></video>`
+  return session.url ? `<video id="${id}" controls playsinline preload="metadata" src="${esc(session.url)}" aria-label="${id === 'answer-player' ? '현재' : '이전'} 기록 재생"></video>`
     : emptyState({ title: '녹화가 없어요', text: session.media.message || '녹화 파일이 없습니다.' });
 }
 
@@ -51,7 +51,7 @@ function template(session) {
   });
   const summary = card({ title: '관찰 요약', description: '판정이 아닌 측정값이에요. 속도는 음량 변화 기반 추정이고, 정면 비율은 눈·고개 상태를 함께 측정할 수 있었던 시간만 써요.', html: `${stats(r)}<p class="hint gaze-detail">시선 측정 불확실·기록 공백 ${r.gazeUnknownSec.toFixed(1)}초</p>
       <p class="hint">${Object.entries(r.gazeReasons).map(([reason,sec])=>`${esc(GAZE_REASON_TEXT[reason]??reason)} ${sec.toFixed(2)}초`).join(' · ')||'기록된 제외 사유 없음'}</p>
-      <p class="hint">동일 표본의 두 방식 방향 일치 ${n(r.gazeComparison.agreementPct,'%')} · 함께 측정 가능 ${r.gazeComparison.seconds.toFixed(1)}초. 일치율은 정확도나 면접 평가를 의미하지 않습니다.</p>` });
+      <p class="hint">동일 표본의 두 방식 방향 일치 ${n(r.gazeComparison.agreementPct,'%')} · 함께 측정 가능 ${r.gazeComparison.seconds.toFixed(1)}초. 일치율은 정확도나 인터뷰 평가를 의미하지 않습니다.</p>` });
   const calibrationInfo=card({title:'사용한 시선 기준',html:`<p>${session.settings.calib?.kind==='precise'?'개인별 정밀 보정':'기본 정면 보정'} · ${session.settings.eyeMethod==='iris'?'홍채 방식(실험)':'기본 눈 방향 방식'}</p><p class="hint">고개 좌우 ±${session.settings.gazeLimits?.yawDeg??15}°, 위아래 ±${session.settings.gazeLimits?.pitchDeg??12}°. 렌즈와 화면 중앙은 정밀 보정에서 각각 기록합니다. 원시값·안정화값·눈별 상태·보정값은 측정값 다운로드에 함께 포함됩니다.</p>`});
   const memo = card({
     title: '메모',
@@ -59,7 +59,7 @@ function template(session) {
       { id: 'here', label: '현재 위치', html: `<div class="stack">
           ${field({ label: '이 위치에 메모', forId: 'marker-note', controlHtml: `<div class="inline"><input class="input" id="marker-note" type="text" maxlength="500" placeholder="직접 발견한 부분을 적어 주세요.">${button({ label: '메모 추가', id: 'add-marker', size: 'sm' })}</div>` })}
           <ul id="markers" class="markers"></ul></div>` },
-      { id: 'all', label: '전체 복기', html: `<div class="stack">
+      { id: 'all', label: '전체 메모', html: `<div class="stack">
           ${field({ label: '전달한 핵심, 다시 볼 부분, 다음에 바꾸고 싶은 점', forId: 'reflection', controlHtml: `<textarea class="textarea" id="reflection" rows="5" maxlength="10000" placeholder="영상과 측정값을 보고 내 생각을 적어 보세요.">${esc(session.reflection)}</textarea>` })}
           <p class="hint" id="note-state" role="status">메모는 현재 탭에서 유지돼요. 필요한 내용은 다운로드하세요.</p>
           <div>${button({ label: '측정값·메모 다운로드', id: 'download-notes', variant: 'outline', size: 'sm' })}</div></div>` },
@@ -74,28 +74,28 @@ function template(session) {
   });
   const comparison = card({
     id: 'comparison', className: 'comparison',
-    title: '같은 질문의 이전 답변과 비교',
-    html: `${field({ label: '현재 탭에서 연습한 답변 선택', forId: 'previous-answer', controlHtml: '<select class="select" id="previous-answer"><option value="">비교할 답변 선택</option></select>' })}
-      <div id="comparison-content"><p class="hint">같은 질문으로 다시 연습하면 이전 답변을 함께 볼 수 있어요. 데모는 비교 기록에 넣지 않아요.</p></div>`,
+    title: '같은 이름표의 이전 기록과 비교',
+    html: `${field({ label: '현재 탭에서 기록한 세션 선택', forId: 'previous-answer', controlHtml: '<select class="select" id="previous-answer"><option value="">비교할 기록 선택</option></select>' })}
+      <div id="comparison-content"><p class="hint">같은 이름표로 다시 하면 이전 기록을 함께 볼 수 있어요. 데모는 비교 기록에 넣지 않아요.</p></div>`,
   });
   return `<div class="report review">
-    <div class="qline">${badge({ label: '질문', variant: 'secondary' })}<b class="q">${esc(session.settings.question || '자유 답변')}</b>
-      <span class="hint">${session.demo ? '데모 데이터 · ' : ''}${esc(session.date)} · 설정 ${formatClock(session.settings.durationSec)} / 답변 ${formatClock(r.durationSec)} · 자동 점수·평가 없음</span></div>
+    <div class="qline">${badge({ label: '이름표', variant: 'secondary' })}<b class="q">${esc(session.settings.question || '이름표 없음')}</b>
+      <span class="hint">${session.demo ? '데모 데이터 · ' : ''}${esc(session.date)} · 설정 ${formatClock(session.settings.durationSec)} / 실제 ${formatClock(r.durationSec)} · 자동 점수·평가 없음</span></div>
     <div class="review-grid">
       <section class="review-main">${video}${timeline}</section>
       <aside class="review-side">${summary}${calibrationInfo}${memo}${intervals}</aside>
     </div>
     ${comparison}
-    <p class="hint">실제 답변은 최근 5개까지 현재 탭에만 보관해요. 새로고침하거나 탭을 닫으면 영상과 메모가 사라져요.</p>
-    <div class="report-actions">${button({ label: '질문·설정 변경', id: 'setup', variant: 'outline' })}
-      ${button({ label: '복기 인쇄 / PDF', id: 'print', variant: 'outline' })}
-      ${button({ label: '보관한 답변·메모 모두 삭제', id: 'clear-history', variant: 'destructive' })}</div>
+    <p class="hint">실제 기록은 최근 5개까지 현재 탭에만 보관해요. 새로고침하거나 탭을 닫으면 영상과 메모가 사라져요.</p>
+    <div class="report-actions">${button({ label: '이름표·설정 변경', id: 'setup', variant: 'outline' })}
+      ${button({ label: '분석 인쇄 / PDF', id: 'print', variant: 'outline' })}
+      ${button({ label: '보관한 기록·메모 모두 삭제', id: 'clear-history', variant: 'destructive' })}</div>
   </div>`;
 }
 
-/** 상단 바: 비교로 이동 · 같은 질문 다시 답변 */
+/** 상단 바: 비교로 이동 · 같은 조건으로 다시 하기 */
 function topActions() {
-  return `${button({ label: '이전 답변과 비교', id: 'goto-compare', variant: 'outline' })}${button({ label: '같은 질문 다시 답변', id: 'retry' })}`;
+  return `${button({ label: '이전 기록과 비교', id: 'goto-compare', variant: 'outline' })}${button({ label: '같은 조건으로 다시 하기', id: 'retry' })}`;
 }
 
 function download(blob, filename) {
@@ -142,7 +142,7 @@ export function enter(appRef, payload = {}) {
     if (app.lastReview?.demo) release(app.lastReview);
     current = {
       id: crypto.randomUUID(), date: new Date().toLocaleString('ko-KR'), settings: structuredClone(app.settings),
-      samples: payload.samples, demo: !!payload.demo, media: payload.media ?? { blob:null, message:'녹화하지 않은 답변입니다.' }, reflection:'', markers:[],
+      samples: payload.samples, demo: !!payload.demo, media: payload.media ?? { blob:null, message:'녹화하지 않은 기록입니다.' }, reflection:'', markers:[],
     };
     current.url = current.media.blob ? URL.createObjectURL(current.media.blob) : null;
     current.review = buildReview(current.samples,current.settings,payload.durationSec);
@@ -192,13 +192,14 @@ export function enter(appRef, payload = {}) {
     const option = document.createElement('option'); option.value=session.id; option.textContent=session.date; $('previous-answer').append(option);
   });
   $('previous-answer').disabled = !previous.length;
+  if (!current.demo && !current.settings.question) $('comparison-content').innerHTML = '<p class="hint">이름표를 넣고 시작하면 같은 이름표의 기록끼리 비교할 수 있어요.</p>';
   $('previous-answer').onchange = e => {
     $('previous-player')?.pause();
     const session = previous.find(x=>x.id===e.target.value);
     $('comparison-content').innerHTML = session ? `<p>${esc(session.date)} · 설정 ${formatClock(session.settings.durationSec)} · 속도 참고 ${session.settings.rateMin}~${session.settings.rateMax}</p>
       <p class="hint">${session.settings.calib?.kind==='precise'?'정밀 보정':'기본 보정'} · ${session.settings.eyeMethod==='iris'?'홍채 방식(실험)':'기본 눈 방향 방식'}. 장치·보정 기준은 연습마다 달라질 수 있습니다. 수치 차이의 의미는 직접 판단하세요.</p>
       <div class="stats">${stats(session.review)}</div>${player(session,'previous-player')}
-      <h3>이전 복기 메모</h3><p class="saved-note">${esc(session.reflection || '남긴 메모 없음')}</p>
+      <h3>이전 기록 메모</h3><p class="saved-note">${esc(session.reflection || '남긴 메모 없음')}</p>
       <ul>${session.markers.map(m=>`<li>${formatClock(m.t)} · ${esc(m.text)}</li>`).join('')}</ul>` : '';
     $('previous-player')?.addEventListener('play', () => root?.querySelector('#answer-player')?.pause());
   };

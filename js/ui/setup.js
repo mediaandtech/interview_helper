@@ -46,14 +46,14 @@ function template() {
   const rateCtl = `<div class="inline"><input class="input num" id="rate-min" type="number" step="10" aria-label="속도 참고 범위 최소"> ~
     <input class="input num" id="rate-max" type="number" step="10" aria-label="속도 참고 범위 최대"> 음절/분</div>`;
   const question = card({
-    title: '연습할 질문',
-    description: '점수나 자동 평가 없이, 답변을 기록하고 직접 돌아봐요.',
+    title: '연습 이름표 (선택)',
+    description: '화면 속 내 목소리와 시선을 보면서 스스로 분석해요. 점수나 자동 평가는 없어요.',
     html: `<div class="stack">
-      ${field({ label: '질문 또는 답변 주제', forId: 'question',
-        controlHtml: '<textarea class="textarea" id="question" rows="2" maxlength="1000" placeholder="예: 지원 동기를 말씀해 주세요."></textarea>' })}
-      ${field({ label: '참고 범위 프리셋', controlHtml: presets, hint: '초기 참고값이에요. 면접의 정답 기준이 아니며 아래에서 바꿀 수 있어요.' })}
+      ${field({ label: '이름표 (같은 이름표끼리 비교해요)', forId: 'question',
+        controlHtml: '<textarea class="textarea" id="question" rows="2" maxlength="1000" placeholder="예: 지원 동기 · 1차"></textarea>' })}
+      ${field({ label: '참고 범위 프리셋', controlHtml: presets, hint: '초기 참고값이에요. 인터뷰의 정답 기준이 아니며 아래에서 바꿀 수 있어요.' })}
       <div class="row2">
-        ${field({ label: '답변 시간', controlHtml: timeCtl, hint: '시간이 지나도 측정은 계속돼요.' })}
+        ${field({ label: '목표 시간', controlHtml: timeCtl, hint: '시간이 지나도 측정은 계속돼요.' })}
         ${field({ label: '속도 참고 범위', controlHtml: rateCtl })}
       </div>
       <details class="disclosure"><summary>정면 참고 범위</summary><div class="row2">
@@ -66,9 +66,9 @@ function template() {
   const recording = card({
     title: '기록 방식',
     html: `<div class="stack">
-      ${switchField({ id: 'record-answer', label: '답변을 녹화·녹음해서 다시 보기', hint: '카운트다운 뒤 시작하고, 끝나면 장치를 꺼요.' })}
-      ${switchField({ id: 'focus-mode', label: '답변 중에는 측정값 숨기기', hint: '답변에 집중하고, 복기 때 확인해요.', checked: true })}
-      <p class="hint">영상·음성·메모는 이 탭에만 보관돼요(최근 실제 답변 5개). 새로고침하거나 탭을 닫으면 사라지니 필요한 자료는 다운로드하세요. 외부 서비스로 보내지 않으며, 말하기 속도는 마이크 음량 변화로 추정해 실제 음절 수와 다를 수 있어요.</p>
+      ${switchField({ id: 'record-answer', label: '화면과 목소리를 녹화·녹음해서 다시 보기', hint: '카운트다운 뒤 시작하고, 끝나면 장치를 꺼요.' })}
+      ${switchField({ id: 'focus-mode', label: '말하는 동안 측정값 숨기기', hint: '끝난 뒤 분석 화면에서 확인해요.', checked: false })}
+      <p class="hint">영상·음성·메모는 이 탭에만 보관돼요(최근 실제 기록 5개). 새로고침하거나 탭을 닫으면 사라지니 필요한 자료는 다운로드하세요. 외부 서비스로 보내지 않으며, 말하기 속도는 마이크 음량 변화로 추정해 실제 음절 수와 다를 수 있어요.</p>
     </div>`,
   });
   const calib = card({
@@ -86,14 +86,14 @@ function template() {
       <div class="progress" role="progressbar" aria-label="준비 확인 진행"><span style="width:0%"></span></div>
     </div>`,
     footerHtml: `${button({ label: '준비 확인 시작', id: 'calib-run', variant: 'outline' })}
-      <button type="button" class="btn" data-size="lg" id="start" disabled>답변 시작</button>`,
+      <button type="button" class="btn" data-size="lg" id="start" disabled>모니터링 시작</button>`,
   });
   return `<div class="setup"><div class="setup-col">${question}${recording}</div><div class="setup-col">${calib}</div></div>`;
 }
 
 /** 상단 바 오른쪽: 보조 동작은 눈에 덜 띄게(ghost) */
 function topActions() {
-  return `${button({ label: '최근 답변 복기로', id: 'last-review', variant: 'ghost', attrs: app.lastReview ? '' : 'hidden' })}
+  return `${button({ label: '최근 기록 분석으로', id: 'last-review', variant: 'ghost', attrs: app.lastReview ? '' : 'hidden' })}
     ${button({ label: '시선 인식 테스트', id: 'gaze-test', variant: 'ghost', attrs: 'title="고개·눈 방향이 맞게 잡히는지 단계별로 점검합니다"' })}
     ${button({ label: '데모로 체험', id: 'demo-start', variant: 'ghost', attrs: 'title="카메라·마이크 없이 가상 데이터로 흐름을 체험합니다"' })}`;
 }
@@ -140,9 +140,9 @@ function updateStart() {
   const voiceOk = !audio || state.calib.baseDb != null;
   const tried = state.tried;
   btn.disabled = !(tried && faceOk && voiceOk) || state.running;
-  if (!tried) { btn.textContent = '답변 시작'; return; }
+  if (!tried) { btn.textContent = '모니터링 시작'; return; }
   const missing = [!gaze && '카메라', !audio && '마이크'].filter(Boolean);
-  btn.textContent = missing.length ? `${missing.join('·')} 없이 답변 시작` : '답변 시작';
+  btn.textContent = missing.length ? `${missing.join('·')} 없이 모니터링 시작` : '모니터링 시작';
 }
 
 function stopDemoSensors() {
@@ -314,7 +314,7 @@ export function enter(appRef) {
   root.querySelector('#precise-clear').onclick=()=>{state.calib=structuredClone(state.basicCalib);state.savedPrecise=null;app.sensors.gaze?.setBase?.(state.calib);root.querySelector('#precise-status').textContent='기본 보정 기준으로 돌아왔습니다.';updateStart();};
   root.querySelector('#question').value = app.settings?.question ?? '';
   root.querySelector('#record-answer').checked = app.settings?.recordAnswer ?? false;
-  root.querySelector('#focus-mode').checked = app.settings?.focusMode ?? true;
+  root.querySelector('#focus-mode').checked = app.settings?.focusMode ?? false;
   for (const [id,key] of [['rate-min','rateMin'],['rate-max','rateMax']]) if (app.settings?.[key] != null) root.querySelector('#'+id).value = app.settings[key];
   root.querySelector('#gaze-yaw').value = app.settings?.gazeLimits?.yawDeg ?? GAZE.yawDeg;
   root.querySelector('#gaze-pitch').value = app.settings?.gazeLimits?.pitchDeg ?? GAZE.pitchDeg;

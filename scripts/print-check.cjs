@@ -5,11 +5,11 @@ const {launchBrowser}=require('./browser-support.cjs');
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
   await page.goto((process.env.REVIEW_URL || 'http://127.0.0.1:8081') + '/?demo=1');
   await page.waitForTimeout(4500);
-  await page.getByRole('button', { name: '답변 끝내기 (Esc)' }).click();
+  await page.getByRole('button', { name: '모니터링 끝내기 (Esc)' }).click();
   await page.locator('#review-time').waitFor();
-  await page.getByRole('tab', { name: '전체 복기' }).click();
+  await page.getByRole('tab', { name: '전체 메모' }).click();
   await page.locator('#reflection').fill('인쇄될 전체 메모');
-  await page.getByRole('tab', { name: '현재 위치' }).click();   // 전체 복기 패널을 다시 숨김
+  await page.getByRole('tab', { name: '현재 위치' }).click();   // 전체 메모 패널을 다시 숨김
   await page.evaluate(() => window.dispatchEvent(new Event('beforeprint')));
   await page.emulateMedia({ media: 'print' });
   const r = await page.evaluate(() => {

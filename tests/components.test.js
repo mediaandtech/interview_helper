@@ -41,7 +41,7 @@ test('segmented marks the chosen value', () => {
 
 test('topBar marks current step and keeps the actions slot', () => {
   const h = topBar({ step: 'report' });
-  assert.match(h, /aria-current="step">복기</); assert.match(h, /id="topbar-right"/);
+  assert.match(h, /aria-current="step">분석</); assert.match(h, /id="topbar-right"/);
 });
 
 test('metricCard is neutral and keeps ids', () => {

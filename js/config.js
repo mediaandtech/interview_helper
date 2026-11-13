@@ -4,7 +4,7 @@
 /** 발표 유형별 기준값 */
 export const PRESETS = {
   class:     { label: '수업 발표',   rateMin: 270, rateMax: 330 },
-  interview: { label: '면접 답변',   rateMin: 260, rateMax: 320 },
+  interview: { label: '화상 면접',   rateMin: 260, rateMax: 320 },
   pitch:     { label: '피칭·공모전', rateMin: 290, rateMax: 350 },
 };
 

@@ -9,8 +9,8 @@ const {launchBrowser,artifactPath}=require('./browser-support.cjs');
  await page.waitForTimeout(4500);
  await page.locator('#toggle-metrics').click();
  await page.waitForTimeout(1200);
- await page.getByRole('button',{name:'답변 끝내기 (Esc)'}).click();
- await page.getByRole('tab',{name:'전체 복기'}).click();
+ await page.getByRole('button',{name:'모니터링 끝내기 (Esc)'}).click();
+ await page.getByRole('tab',{name:'전체 메모'}).click();
  await page.locator('#reflection').fill('핵심을 먼저 말해 보기');
  await page.locator('#review-time').fill('1.5');
  await page.getByRole('tab',{name:'현재 위치'}).click();
@@ -29,14 +29,14 @@ const {launchBrowser,artifactPath}=require('./browser-support.cjs');
  if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)) throw Error('narrow mobile setup overflow');
  await page.setViewportSize({width:375,height:812});
  await page.locator('#demo-start').click();
- await page.getByRole('button',{name:'답변 끝내기 (Esc)'}).click();
- await page.locator('#review-time').waitFor(); // 복기 화면 도착 신호(#reflection 은 '전체 복기' 탭 안이라 숨겨져 있음)
+ await page.getByRole('button',{name:'모니터링 끝내기 (Esc)'}).click();
+ await page.locator('#review-time').waitFor(); // 복기 화면 도착 신호(#reflection 은 '전체 메모' 탭 안이라 숨겨져 있음)
  if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)) throw Error('mobile report overflow');
  await page.screenshot({path:artifactPath('speechboard-review-mobile.png'),fullPage:true});
  // Exercise native MediaRecorder with synthetic media; never access the user's devices.
  await page.setViewportSize({width:1280,height:900});
- async function syntheticAnswer() {
-   await page.evaluate(async () => {
+ async function syntheticAnswer(question='동일 질문') {
+   await page.evaluate(async (question) => {
      app.go('setup');
      const canvas=document.createElement('canvas'); canvas.width=320;canvas.height=240;
      const ctx=canvas.getContext('2d'); ctx.fillStyle='steelblue';ctx.fillRect(0,0,320,240);
@@ -50,17 +50,17 @@ const {launchBrowser,artifactPath}=require('./browser-support.cjs');
        audio:{stream:destination.stream,read:()=>({db:-25,speaking:true,hz:180}),stop(){destination.stream.getTracks().forEach(t=>t.stop());audioCtx.close();}},
        gaze:{video,detect:()=>({face:{yaw:0,pitch:0,eye:{}},landmarks:null}),stop(){stream.getTracks().forEach(t=>t.stop());}},
      };
-     app.settings={presetKey:'interview',question:'동일 질문',durationSec:60,rateMin:260,rateMax:320,focusMode:true,recordAnswer:true,calib:{baseDb:-25,baseHz:180,yaw0:0,pitch0:0,eye0:{}}};
+     app.settings={presetKey:'interview',question,durationSec:60,rateMin:260,rateMax:320,focusMode:true,recordAnswer:true,calib:{baseDb:-25,baseHz:180,yaw0:0,pitch0:0,eye0:{}}};
      app.go('practice');
-   });
+   }, question);
    await page.waitForTimeout(4700);
-   await page.getByRole('button',{name:'답변 끝내기 (Esc)'}).click();
+   await page.getByRole('button',{name:'모니터링 끝내기 (Esc)'}).click();
    await page.locator('#answer-player').waitFor();
    await page.waitForFunction(()=>document.querySelector('#answer-player')?.readyState>=2);
    if(!await page.evaluate(()=>testTracks.every(t=>t.readyState==='ended'))) throw Error('device tracks leaked');
  }
  await syntheticAnswer();
- await page.getByRole('tab',{name:'전체 복기'}).click();
+ await page.getByRole('tab',{name:'전체 메모'}).click();
  await page.locator('#reflection').fill('첫 번째 답변 메모');
  await page.locator('#review-time').fill('0.5');
  await page.waitForFunction(()=>Math.abs(document.querySelector('#answer-player').currentTime-.5)<.15);
@@ -73,13 +73,16 @@ const {launchBrowser,artifactPath}=require('./browser-support.cjs');
  await page.locator('#previous-player').waitFor();
  if(!await page.locator('#comparison-content').textContent().then(t=>t.includes('첫 번째 답변 메모'))) throw Error('comparison note missing');
  if(await page.evaluate(()=>app.reviewSessions.length)!==2) throw Error('real history missing');
- await page.getByRole('tab',{name:'전체 복기'}).click();
+ await page.getByRole('tab',{name:'전체 메모'}).click();
  await page.locator('#reflection').fill('두 번째 답변 메모');
  await page.locator('#delete-media').click();
  if(await page.locator('#answer-player').count()) throw Error('deleted media still present');
  if(await page.locator('#reflection').inputValue()!=='두 번째 답변 메모') throw Error('note lost after media deletion');
  await page.locator('#clear-history').click();
  if(await page.evaluate(()=>app.reviewSessions.length)!==0) throw Error('clear history failed');
+ await syntheticAnswer('');
+ if(!await page.locator('#comparison-content').textContent().then(t=>t.includes('이름표를 넣고 시작하면'))) throw Error('empty label comparison hint missing');
+ await page.locator('#clear-history').click();
  // Late media permissions must not overwrite a demo that has already started.
  await page.evaluate(() => {
    window.originalGetUserMedia=navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);

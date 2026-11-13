@@ -4,7 +4,7 @@ import { PRESETS, GAZE, AUDIO, PITCH, RATE, UI } from '../js/config.js';
 
 test('presets provide editable speed references', () => {
   assert.deepEqual(PRESETS.class,     { label: '수업 발표',   rateMin: 270, rateMax: 330 });
-  assert.deepEqual(PRESETS.interview, { label: '면접 답변',   rateMin: 260, rateMax: 320 });
+  assert.deepEqual(PRESETS.interview, { label: '화상 면접',   rateMin: 260, rateMax: 320 });
   assert.deepEqual(PRESETS.pitch,     { label: '피칭·공모전', rateMin: 290, rateMax: 350 });
 });
 
