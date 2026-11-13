@@ -45,3 +45,13 @@ test('user-selected head reference range changes classification', () => {
 test('questions and self-authored notes are escaped before template rendering', () => {
   assert.equal(escapeHtml('<img src="x" onerror=alert(1)>'), '&lt;img src=&quot;x&quot; onerror=alert(1)&gt;');
 });
+test('volume spread is weighted std of spoken deltaDb', () => {
+  const alt=Array.from({length:20},(_,i)=>({t:i/10,speaking:true,deltaDb:i<10?-3:3}));
+  assert.ok(Math.abs(buildReview(alt,settings,2).volumeStdDb-3)<1e-6);
+  const flat=Array.from({length:10},(_,i)=>({t:i/10,speaking:true,deltaDb:-2}));
+  assert.equal(buildReview(flat,settings,1).volumeStdDb,0);
+});
+test('volume spread is null without speech', () => {
+  const r=buildReview([{t:0,speaking:false,deltaDb:-5},{t:.1,speaking:false,deltaDb:4}],settings,.2);
+  assert.equal(r.volumeStdDb,null);
+});

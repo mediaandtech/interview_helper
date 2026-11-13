@@ -36,6 +36,8 @@ export function buildReview(samples, settings, elapsed) {
   const rates = recorded.filter(s => s.rate != null);
   const seconds=xs=>xs.reduce((a,s)=>a+s.weight,0);
   const weighted=(xs,key)=>seconds(xs)?xs.reduce((a,s)=>a+s[key]*s.weight,0)/seconds(xs):null;
+  const avgDeltaDb=weighted(spoken,'deltaDb');
+  const volumeStdDb=avgDeltaDb==null?null:Math.sqrt(spoken.reduce((a,s)=>a+(s.deltaDb-avgDeltaDb)**2*s.weight,0)/seconds(spoken));
   const intervals = [
     ...observedSegments(gaze.slices, s => s.frontal === false ? '정면 참고 범위 밖' : null),
     ...observedSegments(gaze.slices, s => s.gazeReason ? GAZE_REASON_TEXT[s.gazeReason]??s.gazeReason : s.faceMissing ? '얼굴 검출 안 됨' : null),
@@ -47,7 +49,7 @@ export function buildReview(samples, settings, elapsed) {
     frontalPct:gaze.frontalPct,
     gazeTimeline:gaze.slices, gazeUnknownSec:gaze.unknownSec, gazeReasons:gaze.reasons, gazeComparison:gaze.comparison,
     avgRate:weighted(rates,'rate'),
-    avgDeltaDb:weighted(spoken,'deltaDb'),
+    avgDeltaDb, volumeStdDb,
     pitchSt: semitoneStd(samples.filter(s=>s.speaking && s.hz).map(s=>s.hz)),
     faceCoverageSec:gaze.validSec,
     rateCoverageSec:seconds(rates),
