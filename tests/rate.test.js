@@ -34,3 +34,17 @@ test('rate: recognizedAverage', () => {
   r.addRecognized(150, 20); r.addRecognized(150, 50);
   assert.equal(r.recognizedAverage(60), 300);
 });
+
+test('rate: early in the session divides by elapsed time, not the full window', () => {
+  const r = createRateTracker();
+  for (let i = 0; i < 15; i++) r.addEstimated(i * 0.2);   // 3초에 15음절 = 300/분
+  assert.ok(Math.abs(r.rate(3, 3) - 300) < 25, String(r.rate(3, 3)));
+});
+
+test('rate: recognizedAverage is null when recognition stopped early', () => {
+  const r = createRateTracker();
+  for (let t = 5; t <= 60; t += 5) r.addRecognized(25, t);  // 1분에서 끊김
+  assert.equal(r.recognizedAverage(300), null);
+  for (let t = 65; t <= 300; t += 5) r.addRecognized(25, t);
+  assert.equal(r.recognizedAverage(300), 300);
+});

@@ -61,7 +61,12 @@ export async function initGaze() {
       lastVideoTime = video.currentTime;
       const ts = Math.max(nowMs, lastTs + 1);
       lastTs = ts;
-      const res = landmarker.detectForVideo(video, ts);
+      let res;
+      try { res = landmarker.detectForVideo(video, ts); } catch (err) {
+        console.warn('[gaze] detect failed:', err);
+        last = { face: null, landmarks: null };
+        return last;
+      }
       const lm = res.faceLandmarks?.[0];
       const mat = res.facialTransformationMatrixes?.[0]?.data;
       const bs = res.faceBlendshapes?.[0]?.categories;

@@ -1,5 +1,6 @@
 // ① 설정 화면: 발표 유형, 발표 시간, 준비 확인(보정)
 import { PRESETS, DEFAULT_DURATION_SEC, CALIB } from '../config.js';
+import { calibrateVoice } from '../analysis/audio-math.js';
 import { startAudio } from '../sensors/audio.js';
 import { initGaze } from '../sensors/gaze.js';
 import { createWebcamSketch } from './webcam-sketch.js';
@@ -21,7 +22,7 @@ const median = (a) => { const s = [...a].sort((x, y) => x - y); return s[Math.fl
 const sleepFrames = (ms, onFrame) => new Promise((resolve) => {
   const t0 = performance.now();
   const tick = (now) => {
-    onFrame(now, (now - t0) / ms);
+    try { onFrame(now, (now - t0) / ms); } catch (err) { console.warn('[setup] frame skipped:', err); }
     if (now - t0 >= ms) resolve(); else raf = requestAnimationFrame(tick);
   };
   raf = requestAnimationFrame(tick);
@@ -74,16 +75,17 @@ function template() {
 }
 
 function readForm() {
-  const m = Number(root.querySelector('#dur-m').value) || 0;
-  const s = Number(root.querySelector('#dur-s').value) || 0;
-  const durationSec = Math.min(30 * 60, Math.max(60, m * 60 + s));
-  return {
-    presetKey: state.presetKey,
-    durationSec,
-    rateMin: Number(root.querySelector('#rate-min').value),
-    rateMax: Number(root.querySelector('#rate-max').value),
-    gazeTarget: Math.min(1, Math.max(0.5, Number(root.querySelector('#gaze-target').value) / 100)),
+  const num = (sel, fallback) => {
+    const v = Number(root.querySelector(sel).value);
+    return root.querySelector(sel).value !== '' && Number.isFinite(v) ? v : fallback;
   };
+  const p = PRESETS[state.presetKey];
+  const m = num('#dur-m', 0), s = num('#dur-s', 0);
+  const durationSec = Math.min(30 * 60, Math.max(60, m * 60 + s));
+  let rateMin = num('#rate-min', p.rateMin), rateMax = num('#rate-max', p.rateMax);
+  if (rateMin > rateMax) [rateMin, rateMax] = [rateMax, rateMin];
+  const gazeTarget = Math.min(1, Math.max(0.5, num('#gaze-target', p.gazeTarget * 100) / 100));
+  return { presetKey: state.presetKey, durationSec, rateMin, rateMax, gazeTarget };
 }
 
 function applyPreset(key) {
@@ -134,7 +136,8 @@ async function runCalibration() {
   if (!root) return; // 화면을 떠남
   const { audio, gaze } = app.sensors;
 
-  // 1단계: 정면 기준
+  // 1단계: 정면 기준 (같은 시간 동안 주변 소음도 잼)
+  const noise = [];
   if (gaze) {
     setStep('face', 'active', '');
     btn.textContent = '정면 측정 중…';
@@ -143,6 +146,7 @@ async function runCalibration() {
       setProgress(f * 0.33);
       const d = gaze.detect(now);
       state.landmarks = d.landmarks;
+      if (audio) noise.push(audio.read(null).db);
       if (d.face) { yaws.push(d.face.yaw); pitches.push(d.face.pitch); eyes.push(d.face.eye); }
     });
     if (yaws.length >= 10) {
@@ -162,17 +166,18 @@ async function runCalibration() {
   if (audio) {
     setStep('voice', 'active', '');
     btn.textContent = '듣는 중… 문장을 읽어 주세요';
-    const dbs = [], hzs = [];
+    const frames = [];
     await sleepFrames(CALIB.readSec * 1000, (now, f) => {
       setProgress(0.33 + f * 0.67);
       if (gaze) state.landmarks = gaze.detect(now).landmarks;
       const r = audio.read(null);
       debugLine({ db: r.db, speaking: String(r.speaking), hz: r.hz ?? 0 });
-      if (r.speaking) { dbs.push(r.db); if (r.hz) hzs.push(r.hz); }
+      frames.push({ db: r.db, hz: r.hz });
     });
-    if (dbs.length >= 30) {
-      state.calib.baseDb = median(dbs);
-      state.calib.baseHz = hzs.length ? median(hzs) : null;
+    const v = calibrateVoice(frames, noise.length ? median(noise) : null);
+    if (v) {
+      state.calib.baseDb = v.baseDb;
+      state.calib.baseHz = v.baseHz;
       setStep('voice', 'done', `기준 음량 ${state.calib.baseDb.toFixed(0)} dB${state.calib.baseHz ? ` · 기준 음높이 ${Math.round(state.calib.baseHz)} Hz` : ''}`);
     } else {
       state.calib.baseDb = null;

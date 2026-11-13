@@ -6,6 +6,7 @@ export function createRateTracker() {
   const rec = [];  // { t, count } 인식된 음절
   let latest = 0;
   let recTotal = 0;
+  let lastRecT = -Infinity;
 
   const sumSince = (from) => ({
     est: est.filter((t) => t > from).length,
@@ -14,7 +15,7 @@ export function createRateTracker() {
 
   const api = {
     addEstimated(tSec) { est.push(tSec); latest = Math.max(latest, tSec); },
-    addRecognized(count, tSec) { rec.push({ t: tSec, count }); recTotal += count; latest = Math.max(latest, tSec); },
+    addRecognized(count, tSec) { rec.push({ t: tSec, count }); recTotal += count; lastRecT = Math.max(lastRecT, tSec); latest = Math.max(latest, tSec); },
 
     correction() {
       const s = sumSince(latest - RATE.correctionWindowSec);
@@ -25,12 +26,14 @@ export function createRateTracker() {
 
     rate(tSec, speakingSecInWindow) {
       if (speakingSecInWindow < RATE.minSpeakingSecForRate) return null;
-      const n = est.filter((t) => t > tSec - RATE.windowSec && t <= tSec).length;
-      return (n * 60) / RATE.windowSec * api.correction();
+      const span = Math.max(1, Math.min(RATE.windowSec, tSec)); // 시작 직후에는 지난 시간만큼만
+      const n = est.filter((t) => t > tSec - span && t <= tSec).length;
+      return (n * 60) / span * api.correction();
     },
 
     recognizedAverage(totalSec) {
       if (recTotal === 0 || totalSec <= 0) return null;
+      if (lastRecT < totalSec - RATE.recognitionCoverageSec) return null; // 중간에 끊긴 인식은 믿지 않음
       return (recTotal * 60) / totalSec;
     },
   };

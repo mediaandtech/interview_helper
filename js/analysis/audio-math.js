@@ -63,3 +63,33 @@ export function semitoneStd(hzList) {
   const varc = st.reduce((a, b) => a + (b - mean) ** 2, 0) / (st.length - 1);
   return Math.sqrt(varc);
 }
+
+const median = (a) => { const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; };
+
+/**
+ * 100ms 동안 모은 프레임 → 샘플 하나.
+ * 말하는 샘플의 음량은 말한 프레임만 평균(단어 끝 침묵이 '작은 목소리'로 섞이지 않게).
+ */
+export function summarizeFrames(frames) {
+  if (!frames.length) return { speaking: false, db: null, hz: null };
+  const spoken = frames.filter((f) => f.speaking);
+  const speaking = spoken.length / frames.length >= 0.5;
+  const pool = speaking ? spoken : frames;
+  const db = pool.reduce((a, f) => a + f.db, 0) / pool.length;
+  const hzs = spoken.map((f) => f.hz).filter((h) => h);
+  return { speaking, db, hz: speaking && hzs.length ? median(hzs) : null };
+}
+
+/**
+ * 보정: 주변 소음보다 calibAboveNoiseDb 이상 큰 프레임만 목소리로 보고 기준값을 정합니다.
+ * @param {{db:number, hz:number|null}[]} frames  문장을 읽는 동안의 프레임
+ * @param {number|null} noiseDb  정면 측정 동안 잰 주변 소음(중앙값)
+ * @returns {{baseDb:number, baseHz:number|null}|null}
+ */
+export function calibrateVoice(frames, noiseDb) {
+  const floor = noiseDb == null ? -50 : Math.max(-50, noiseDb + AUDIO.calibAboveNoiseDb);
+  const voiced = frames.filter((f) => f.db > floor);
+  if (voiced.length < AUDIO.calibMinFrames) return null;
+  const hzs = voiced.map((f) => f.hz).filter((h) => h);
+  return { baseDb: median(voiced.map((f) => f.db)), baseHz: hzs.length ? median(hzs) : null };
+}

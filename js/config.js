@@ -29,6 +29,8 @@ export const AUDIO = {
   warnRangeDb: [-10, 12],
   silenceBelowBaseDb: 18, // 기준보다 이만큼 작으면 '말 안 함'
   fftSize: 2048,
+  calibAboveNoiseDb: 10, // 보정 때 주변 소음보다 이만큼 커야 목소리로 인정
+  calibMinFrames: 30,
 };
 
 /** 음성 높낮이 */
@@ -47,6 +49,7 @@ export const RATE = {
   warnMarginSpm: 30,          // 목표 범위 밖 이 정도까지는 주황
   minSpeakingSecForRate: 3,   // 최근 구간에 이만큼 말해야 속도 표시
   correctionClamp: [0.5, 2.0],
+  recognitionCoverageSec: 20, // 마지막 인식이 끝나기 이만큼 전 이내여야 리포트 평균에 인식값 사용
 };
 
 /** 소리 크기 봉우리로 음절을 추정할 때 */

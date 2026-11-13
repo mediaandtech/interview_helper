@@ -3,7 +3,7 @@ import { UI, PITCH, RATE } from '../config.js';
 import { formatClock } from '../util/time.js';
 import { classifyRate, classifyVolume, classifyPitchVar, classifyTime, classifyGazeRatio } from '../analysis/classify.js';
 import { createHysteresis } from '../analysis/hysteresis.js';
-import { semitoneStd } from '../analysis/audio-math.js';
+import { semitoneStd, summarizeFrames } from '../analysis/audio-math.js';
 import { createSyllableEstimator } from '../analysis/syllables.js';
 import { createRateTracker } from '../analysis/rate.js';
 import { isFrontal, createGazeTracker } from '../analysis/gaze-logic.js';
@@ -72,7 +72,7 @@ function newState(settings) {
     landmarks: null,
     recorder: createRecorder(),
     hyst: { rate: createHysteresis(), vol: createHysteresis(), pitch: createHysteresis() },
-    frame: { dbs: [], speak: 0, n: 0, hzs: [] },
+    frames: [],
     hzHist: [],
     speakHist: [],
     pitchStatus: 'idle',
@@ -90,9 +90,7 @@ function readSensors(now) {
   const { calib } = s.settings;
   if (audio) {
     const r = audio.read(calib.baseDb);
-    s.frame.dbs.push(r.db); s.frame.n++;
-    if (r.speaking) s.frame.speak++;
-    if (r.hz) s.frame.hzs.push(r.hz);
+    s.frames.push(r);
     if (s.phase === 'live' && s.estimator.push(r.db, now, r.speaking)) s.rate.addEstimated(t());
   }
   if (gaze && now - s.lastGaze >= GAZE_MIN_MS) {
@@ -114,11 +112,8 @@ function tick() {
   const baseDb = settings.calib.baseDb;
 
   // 이번 100ms 동안 모은 프레임을 하나의 샘플로
-  const fr = s.frame;
-  const speaking = fr.n > 0 && fr.speak / fr.n >= 0.5;
-  const db = fr.n ? fr.dbs.reduce((a, b) => a + b, 0) / fr.n : null;
-  const hz = fr.hzs.length ? fr.hzs.sort((a, b) => a - b)[Math.floor(fr.hzs.length / 2)] : null;
-  s.frame = { dbs: [], speak: 0, n: 0, hzs: [] };
+  const { speaking, db, hz } = summarizeFrames(s.frames);
+  s.frames = [];
 
   s.speakHist.push({ t: tt, speaking });
   while (s.speakHist.length && s.speakHist[0].t < tt - RATE.windowSec) s.speakHist.shift();
@@ -196,6 +191,11 @@ function updatePill() {
 }
 
 function loop(now) {
+  raf = requestAnimationFrame(loop); // 먼저 예약: 한 프레임에서 오류가 나도 화면이 멈추지 않게
+  try { step(now); } catch (err) { console.warn('[practice] frame skipped:', err); }
+}
+
+function step(now) {
   readSensors(now);
   if (s.phase === 'countdown') {
     const left = Math.ceil((s.countdownEnd - now) / 1000);
@@ -205,6 +205,7 @@ function loop(now) {
       s.startMs = now;
       s.lastTick = now;
       $('countdown').remove();
+      s.frames = []; // 카운트다운 동안 모인 소리는 버림
       s.speech = app.sensors.audio
         ? startSpeech({
             onSyllables: (n, tSec) => s.rate.addRecognized(n, tSec),
@@ -217,7 +218,6 @@ function loop(now) {
     s.lastTick += TICK_MS * Math.floor((now - s.lastTick) / TICK_MS);
     tick();
   }
-  raf = requestAnimationFrame(loop);
 }
 
 function finish() {
