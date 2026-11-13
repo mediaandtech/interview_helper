@@ -82,3 +82,15 @@ test('a long look-away always makes the top 3 tips (gaze is the main metric)', (
   })), SET);
   assert.ok(r.tips.some((x) => x.t === 97 && x.text.includes('아래')), JSON.stringify(r.tips));
 });
+
+test('report lists every out-of-range stretch with start and duration', () => {
+  const r = buildReport(mk(324, (s) => ({
+    ...(s.t >= 97 && s.t < 104 ? { frontal: false, dir: 'down' } : {}),
+    ...(s.t >= 230 ? { deltaDb: -12 } : {}),
+  })), SET);
+  const gaze = r.issues.find((i) => i.metric === 'gaze');
+  assert.deepEqual({ ...gaze, dur: Math.round(gaze.dur) }, { metric: 'gaze', label: '시선 아래', start: 97, dur: 7 });
+  const vol = r.issues.find((i) => i.metric === 'volume');
+  assert.equal(vol.label, '목소리 작음'); assert.equal(vol.start, 230); assert.ok(vol.dur > 90);
+  assert.deepEqual(r.issues.map((i) => i.start), [...r.issues.map((i) => i.start)].sort((a, b) => a - b));
+});

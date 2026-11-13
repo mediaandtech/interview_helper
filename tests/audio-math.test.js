@@ -37,3 +37,12 @@ test('semitoneStd', () => {
   const s = semitoneStd([200, 224.5, 200, 224.5, 200, 224.5]);
   assert.ok(s > 0.9 && s < 1.2, String(s));
 });
+
+import { cleanPitch } from '../js/analysis/audio-math.js';
+
+test('cleanPitch drops isolated octave jumps but keeps real movement', () => {
+  const pts = [200, 202, 205, 410, 207, 210, 215, 220].map((hz, i) => ({ t: i * 0.1, hz }));
+  assert.deepEqual(cleanPitch(pts).map((p) => p.hz), [200, 202, 205, 207, 210, 215, 220]);
+  const rising = [150, 160, 170, 180, 190, 200].map((hz, i) => ({ t: i * 0.1, hz }));
+  assert.equal(cleanPitch(rising).length, 6);
+});

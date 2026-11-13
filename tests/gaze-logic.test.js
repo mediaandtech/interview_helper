@@ -66,3 +66,21 @@ test('tracker: flush closes an ongoing long look-away', () => {
   g.flush(6);
   assert.deepEqual(g.events(), [{ start: 1, dur: 5, dir: 'left' }]);
 });
+
+import { analyzeGaze, gazeGrid } from '../js/analysis/gaze-logic.js';
+
+test('analyzeGaze separates head and eyes', () => {
+  const head = analyzeGaze({ yaw: 20, pitch: 0, eye: eye0 }, calib);
+  assert.equal(head.frontal, false); assert.equal(head.head.ok, false); assert.equal(head.head.dir, 'right'); assert.equal(head.dir, 'right');
+  const eyes = analyzeGaze({ yaw: 0, pitch: 0, eye: { ...eye0, down: 0.8 } }, calib);
+  assert.equal(eyes.head.ok, true); assert.equal(eyes.eye.ok, false); assert.equal(eyes.eye.dir, 'down'); assert.equal(eyes.dir, 'down');
+  const none = analyzeGaze(null, calib);
+  assert.deepEqual([none.frontal, none.dir, none.head.ok, none.eye.ok], [false, 'none', false, false]);
+});
+
+test('gazeGrid maps to a 3x3 cell', () => {
+  assert.deepEqual(gazeGrid({ yaw: 0, pitch: 0, eye: eye0 }, calib), { col: 0, row: 0 });
+  assert.deepEqual(gazeGrid({ yaw: -20, pitch: -15, eye: eye0 }, calib), { col: -1, row: 1 });
+  assert.deepEqual(gazeGrid({ yaw: 0, pitch: 0, eye: { ...eye0, up: 0.9 } }, calib), { col: 0, row: -1 });
+  assert.equal(gazeGrid(null, calib), null);
+});

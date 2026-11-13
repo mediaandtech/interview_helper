@@ -19,6 +19,7 @@ const PRAISE = {
   volume: '목소리 크기가 고르게 유지됐어요.', pitch: '억양에 변화가 살아 있었어요.', time: '시간 배분이 정확했어요.',
 };
 const ORDER = ['gaze', 'rate', 'volume', 'time', 'pitch'];
+const GAZE_WORD = { down: '아래', up: '위', left: '왼쪽', right: '오른쪽', none: '화면 밖' };
 const FALLBACK_TIP = '꾸준히 연습하면 더 좋아질 거예요.';
 
 const mean = (a) => a.reduce((x, y) => x + y, 0) / a.length;
@@ -66,7 +67,7 @@ function gazeMetric(samples, target) {
 export function buildReport(samples, settings, extras = {}) {
   const durationSec = samples.length ? samples[samples.length - 1].t + 0.1 : 0;
   if (durationSec < REPORT.minSessionSec) {
-    return { tooShort: true, durationSec, score: null, metrics: null, headline: '', tips: [], gazeEvents: [] };
+    return { tooShort: true, durationSec, score: null, metrics: null, headline: '', tips: [], gazeEvents: [], issues: [] };
   }
 
   const { metric: gaze, events: gazeEvents } = gazeMetric(samples, settings.gazeTarget);
@@ -101,7 +102,9 @@ export function buildReport(samples, settings, extras = {}) {
 
   // ---- 피드백 후보 ----
   const cands = [];
+  const issues = [];
   for (const e of gazeEvents) {
+    issues.push({ metric: 'gaze', label: `시선 ${GAZE_WORD[e.dir] ?? '이탈'}`, start: e.start, dur: e.dur });
     cands.push({ key: 'gaze', t: e.start, sev: e.dur * 2,
       text: `${formatStamp(e.start)}에 ${Math.round(e.dur)}초 동안 시선이 ${DIR_TEXT[e.dir] ?? '다른 곳으로'} 향했어요. 원고를 보는 시간을 3초 이내로 줄여 보세요.` });
   }
@@ -110,11 +113,13 @@ export function buildReport(samples, settings, extras = {}) {
     if (seg.len < REPORT.quietSegmentSec) continue;
     const d = mean(seg.items.map((s) => s.deltaDb));
     const p = Math.round((1 - 10 ** (d / 20)) * 100);
+    issues.push({ metric: 'volume', label: '목소리 작음', start: seg.start, dur: seg.len });
     cands.push({ key: 'volume', t: seg.start, sev: seg.len * Math.abs(d) / 6,
       text: `${formatStamp(seg.start)} 이후 목소리가 기준보다 ${p}% 작아졌어요. 결론 부분일수록 크게 말해 보세요.` });
   }
   for (const seg of segments(samples, (s) => s.deltaDb > 8, skipSilent)) {
     if (seg.len < REPORT.quietSegmentSec) continue;
+    issues.push({ metric: 'volume', label: '목소리 큼', start: seg.start, dur: seg.len });
     cands.push({ key: 'volume', t: seg.start, sev: seg.len,
       text: `${formatStamp(seg.start)}부터 목소리가 기준보다 커졌어요. 힘을 조금 빼 보세요.` });
   }
@@ -123,6 +128,7 @@ export function buildReport(samples, settings, extras = {}) {
     for (const seg of segments(samples, out, (s) => s.rate == null)) {
       if (seg.len < REPORT.rateSegmentSec) continue;
       const r = Math.round(mean(seg.items.map((s) => s.rate)));
+      issues.push({ metric: 'rate', label: fast ? '말 빠름' : '말 느림', start: seg.start, dur: seg.len });
       cands.push({ key: 'rate', t: seg.start, sev: seg.len,
         text: `${formatStamp(seg.start)}부터 말이 ${word}(평균 ${r}음절/분). 목표는 ${settings.rateMin}~${settings.rateMax}음절/분이에요.` });
     }
@@ -162,5 +168,6 @@ export function buildReport(samples, settings, extras = {}) {
     ? `${BEST[best]}. 전반적으로 훌륭한 발표였어요.`
     : `${BEST[best]}. ${WORST[worst]} 가장 아쉬워요.`;
 
-  return { tooShort: false, durationSec, score, metrics, headline, tips, gazeEvents, fillerCount };
+  issues.sort((a, b) => a.start - b.start);
+  return { tooShort: false, durationSec, score, metrics, headline, tips, gazeEvents, fillerCount, issues };
 }

@@ -93,3 +93,16 @@ export function calibrateVoice(frames, noiseDb) {
   const hzs = voiced.map((f) => f.hz).filter((h) => h);
   return { baseDb: median(voiced.map((f) => f.db)), baseHz: hzs.length ? median(hzs) : null };
 }
+
+/**
+ * 그래프용 음높이 정리: 앞뒤 2개씩과 비교해 7반음 넘게 튀는 단발 값(옥타브 오류)을 뺍니다.
+ * 실제로 이어지는 움직임은 그대로 둡니다.
+ */
+export function cleanPitch(points) {
+  const JUMP_ST = 7;
+  return points.filter((p, i) => {
+    const nb = points.slice(Math.max(0, i - 2), i).concat(points.slice(i + 1, i + 3)).map((q) => q.hz);
+    if (nb.length < 2) return true;
+    return Math.abs(12 * Math.log2(p.hz / median(nb))) <= JUMP_ST;
+  });
+}

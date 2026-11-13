@@ -86,4 +86,37 @@ export const UI = {
   hysteresisSec: 1,
   sampleHz: 10,
   countdownSec: 3,
+  rateGaugePad: 90,   // 속도 게이지: 목표 범위 양옆으로 이만큼(음절/분) 더 보여 줌
+  volumeGaugeDb: 15,  // 크기 게이지: 기준 대비 ±15 dB
+};
+
+/** 디자인 토큰 (CSS 변수와 p5 그림이 모두 여기 값을 씀) */
+export const THEME = {
+  bg: '#111820',
+  panel: '#1d2935',
+  panel2: '#243241',
+  border: '#2c3b4a',
+  text: '#d8dee9',
+  muted: '#8b97a6',
+  accent: '#5794f2',
+  accentBg: '#16304f',
+  badBg: '#3a1d26',
+  video: '#0a0f14',
+};
+
+/** 상태색: 장식이 아니라 의미 */
+export const STATUS_COLORS = {
+  ok: '#73bf69',
+  warn: '#ff9830',
+  bad: '#f2495c',
+  idle: '#8b97a6',
+};
+
+/** 그래프 보조색 */
+export const SERIES_COLORS = {
+  rate: '#73bf69',
+  volume: '#5794f2',
+  pitch: '#b877d9',
+  yaw: '#5794f2',
+  pitchAngle: '#fade2a',
 };

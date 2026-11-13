@@ -22,21 +22,46 @@ export function eyeFromBlendshapes(categories) {
   };
 }
 
-/** 보정 기준 대비 정면인지 판정. 얼굴이 없으면 정면 아님 */
-export function isFrontal(face, calib) {
-  if (!face) return { frontal: false, dir: 'none' };
+const NONE = { frontal: false, dir: 'none', head: { ok: false, dir: 'none', yaw: null, pitch: null }, eye: { ok: false, dir: 'none' } };
+
+/**
+ * 고개와 눈을 따로 판정합니다. 전체 판정은 고개 우선, 그다음 눈.
+ * @returns {{ frontal:boolean, dir:string, head:{ok:boolean, dir:string, yaw:number|null, pitch:number|null}, eye:{ok:boolean, dir:string} }}
+ */
+export function analyzeGaze(face, calib) {
+  if (!face) return NONE;
   const dy = face.yaw - (calib?.yaw0 ?? 0);
   const dp = face.pitch - (calib?.pitch0 ?? 0);
-  if (Math.abs(dy) > GAZE.yawDeg) return { frontal: false, dir: dy > 0 ? 'right' : 'left' };
-  if (Math.abs(dp) > GAZE.pitchDeg) return { frontal: false, dir: dp > 0 ? 'up' : 'down' };
+  let headDir = 'front';
+  if (Math.abs(dy) > GAZE.yawDeg) headDir = dy > 0 ? 'right' : 'left';
+  else if (Math.abs(dp) > GAZE.pitchDeg) headDir = dp > 0 ? 'up' : 'down';
 
   const e0 = calib?.eye0 ?? { down: 0, up: 0, left: 0, right: 0 };
-  let dir = null, max = GAZE.eyeThreshold;
+  let eyeDir = 'front', max = GAZE.eyeThreshold;
   for (const k of ['down', 'up', 'left', 'right']) {
     const v = (face.eye?.[k] ?? 0) - (e0[k] ?? 0);
-    if (v > max) { max = v; dir = k; }
+    if (v > max) { max = v; eyeDir = k; }
   }
-  return dir ? { frontal: false, dir } : { frontal: true, dir: 'front' };
+  const head = { ok: headDir === 'front', dir: headDir, yaw: dy, pitch: dp };
+  const eye = { ok: eyeDir === 'front', dir: eyeDir };
+  const dir = !head.ok ? headDir : eyeDir;
+  return { frontal: head.ok && eye.ok, dir, head, eye };
+}
+
+/** 보정 기준 대비 정면인지 판정. 얼굴이 없으면 정면 아님 */
+export function isFrontal(face, calib) {
+  const g = analyzeGaze(face, calib);
+  return { frontal: g.frontal, dir: g.dir };
+}
+
+/** 디버그용 3×3 그리드 칸: col -1(왼)~1(오), row -1(위)~1(아래) */
+export function gazeGrid(face, calib) {
+  if (!face) return null;
+  const g = analyzeGaze(face, calib);
+  const pick = (d) => ({ left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] }[d] ?? [0, 0]);
+  const [hc, hr] = [Math.sign(Math.trunc(g.head.yaw / GAZE.yawDeg)), -Math.sign(Math.trunc(g.head.pitch / GAZE.pitchDeg))];
+  const [ec, er] = pick(g.eye.dir);
+  return { col: hc || ec, row: hr || er };
 }
 
 /**

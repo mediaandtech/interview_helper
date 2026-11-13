@@ -20,7 +20,7 @@ test('classifyVolume', () => {
 });
 
 test('classifyPitchVar', () => {
-  assert.deepEqual(classifyPitchVar(null), { status: 'idle', label: '—' });
+  assert.deepEqual(classifyPitchVar(null), { status: 'idle', label: '측정 대기' });
   assert.deepEqual(classifyPitchVar(1.0), { status: 'warn', label: '단조' });
   assert.deepEqual(classifyPitchVar(2.5), { status: 'ok', label: '적정' });
   assert.deepEqual(classifyPitchVar(5),   { status: 'ok', label: '풍부' });
@@ -29,7 +29,7 @@ test('classifyPitchVar', () => {
 test('classifyTime', () => {
   assert.deepEqual(classifyTime(108, 300), { status: 'ok',   text: '03:12' });
   assert.deepEqual(classifyTime(250, 300), { status: 'warn', text: '00:50' });
-  assert.deepEqual(classifyTime(324, 300), { status: 'bad',  text: '+0:24' });
+  assert.deepEqual(classifyTime(324, 300), { status: 'bad',  text: '+00:24' });
 });
 
 test('classifyGazeRatio', () => {
