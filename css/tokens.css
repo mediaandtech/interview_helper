@@ -1,128 +1,101 @@
 /* =====================================================================
-   SpeechBoard 디자인 토큰
-   3단계 구조:  1) 원시값(primitive)  →  2) 의미(semantic)  →  3) 컴포넌트(component)
-   - 화면 코드(style.css)는 2)·3)만 씁니다. 원시값을 직접 쓰지 않습니다.
-   - 같은 색을 p5 그림에서도 쓰므로 js/config.js 의 THEME / STATUS_COLORS 와 값이 같아야 합니다.
-     (tests/tokens.test.js 가 두 파일이 어긋나면 실패합니다)
-   - 문서: design-system/speechboard/MASTER.md
+   SpeechBoard 토큰 — Basecoat UI(shadcn) 다크 테마 위에 얹는 앱 값
+   - 라이브러리: vendor/basecoat/basecoat.cdn.min.css (기본 Vega, <html class="dark">)
+   - html.dark 블록: Basecoat 다크 토큰을 같은 색의 hex로 고정(p5 그림이 같은 값을 쓰도록).
+     js/config.js 의 THEME / SERIES_COLORS 와 tests/tokens.test.js 로 일치를 확인합니다.
+   - 화면 CSS(css/app.css)는 Basecoat 토큰과 아래 앱 토큰만 씁니다.
    ===================================================================== */
 
-:root {
-  /* ---------- 1) 원시값: 팔레트 ---------- */
-  --gray-950: #0a0f14;
-  --gray-900: #111820;
-  --gray-850: #1d2935;
-  --gray-800: #243241;
-  --gray-700: #2c3b4a;
-  --gray-400: #9aa5b4;   /* 보조 글자: 모든 면 위에서 4.5:1 이상 */
-  --gray-100: #d8dee9;
-  --white: #ffffff;
-
-  --green-500: #73bf69;
-  --orange-500: #ff9830;
-  --red-500: #f2495c;
-  --red-400: #ff6b7d;    /* 작은 글자용 빨강: 4.5:1 이상 */
-  --red-950: #3a1d26;
-  --blue-400: #79a6f6;
-  --blue-500: #5794f2;
-  --blue-600: #3d71d9;
-  --blue-950: #16304f;
-  --purple-500: #b877d9;
-  --yellow-400: #fade2a;
-
-  /* ---------- 2) 의미 ---------- */
-  /* 면 */
-  --bg: var(--gray-900);            /* 페이지 배경 */
-  --panel: var(--gray-850);         /* 패널(카드) */
-  --panel-2: var(--gray-800);       /* 패널 안 강조 면(배지, 버튼) */
-  --video: var(--gray-950);         /* 웹캠·그래프 바탕 */
-  --border: var(--gray-700);
-  /* 글자 */
-  --text: var(--gray-100);
-  --muted: var(--gray-400);
-  --on-accent: var(--white);
-  /* 강조(상호작용) */
-  --accent: var(--blue-500);
-  --accent-text: var(--blue-400);
-  --accent-strong: var(--blue-600); /* 주 버튼 배경: 흰 글자 4.6:1 */
-  --accent-bg: var(--blue-950);
-  --focus-ring: var(--blue-400);
-  /* 상태: 색은 항상 글자 라벨(적정/주의/이탈)과 함께 */
-  --ok: var(--green-500);
-  --warn: var(--orange-500);
-  --bad: var(--red-500);            /* 채우기·테두리·큰 글자(24px+) */
-  --bad-text: var(--red-400);       /* 작은 글자 */
-  --bad-bg: var(--red-950);         /* 이탈 패널 배경 */
-  --idle: var(--gray-400);          /* 측정 대기 */
-  --ok-soft: rgba(115, 191, 105, .28);   /* 적정 범위 띠 */
-  --ok-line: rgba(115, 191, 105, .55);   /* 정면일 때 웹캠 테두리 */
-  --scrim: rgba(10, 15, 20, .72);        /* 영상 위 글자 바탕 */
-  /* 그래프 선 */
-  --series-rate: var(--green-500);
-  --series-volume: var(--blue-500);
-  --series-pitch: var(--purple-500);
-  --series-yaw: var(--blue-500);
-  --series-pitch-angle: var(--yellow-400);
-
-  /* ---------- 간격 (대시보드: 촘촘한 4px 단위) ---------- */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
-  --space-8: 32px;
-
-  /* ---------- 글자 ---------- */
-  --font: Inter, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Segoe UI", sans-serif;
-  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
-  --fs-caption: 11px;   /* 패널 제목(대문자), 게이지 끝 라벨 */
-  --fs-small: 12px;     /* 보조 설명 */
-  --fs-body: 14px;      /* 본문 */
-  --fs-lead: 16px;      /* 시선 알약, 안내 문장 */
-  --fs-title: 18px;     /* 리포트 한 줄 결론 */
-  --fs-number: 22px;    /* 패널 오른쪽 위 보조 숫자 */
-  --fs-state: clamp(28px, 5.4vh, 46px);   /* 상태 단어(적정/빠름) — 1초 안에 읽히는 크기 */
-  --fs-display: clamp(34px, 6.6vh, 58px); /* 남은 시간 */
-  --fs-score: 64px;     /* 리포트 점수 */
-  --fw-regular: 400;
-  --fw-semibold: 600;
-  --fw-bold: 700;
-  --lh-tight: 1.1;
-  --lh-body: 1.45;
-
-  /* ---------- 모양 ---------- */
-  --radius-sm: 3px;
-  --radius: 4px;
-  --radius-lg: 6px;
-  --radius-pill: 999px;
-  --stripe: 3px;        /* 패널 왼쪽 상태 띠 두께 */
-
-  /* ---------- 움직임 (의미 있는 변화만, 짧게) ---------- */
-  --dur-fast: 120ms;    /* 게이지 마커 이동 */
-  --dur-base: 200ms;    /* 상태색 전환 */
-  --dur-slow: 300ms;
-  --ease: cubic-bezier(.2, 0, 0, 1);
-
-  /* ---------- 3) 컴포넌트 ---------- */
-  --panel-bg: var(--panel);
-  --panel-border: var(--border);
-  --panel-padding: var(--space-3) var(--space-4);
-  --gauge-track: var(--bg);
-  --gauge-band: var(--ok-soft);
-  --gauge-height: 12px;
-  --gauge-mark-w: 6px;
-  --gauge-mark-h: 22px;
-  --pill-bg: var(--panel);
-  --pill-border-w: 2px;
-  --btn-bg: var(--panel-2);
-  --btn-primary-bg: var(--accent-strong);
-  --btn-height: 36px;
-  --topbar-h: 44px;
+html.dark {
+  --background: #0a0a0a;
+  --foreground: #fafafa;
+  --card: #171717;
+  --card-foreground: #fafafa;
+  --popover: #171717;
+  --popover-foreground: #fafafa;
+  --primary: #e5e5e5;
+  --primary-foreground: #171717;
+  --secondary: #262626;
+  --secondary-foreground: #fafafa;
+  --muted: #262626;
+  --muted-foreground: #a1a1a1;
+  --accent: #404040;
+  --accent-foreground: #fafafa;
+  --destructive: #ff6467;
+  --border: #2e2e2e;
+  --input: #333333;
+  --ring: #737373;
+  --chart-1: #93c5fd;
+  --chart-2: #3b82f6;
+  --chart-3: #2563eb;
+  --chart-4: #1d4ed8;
+  --chart-5: #1e40af;
 }
 
-/* 동작 줄이기 설정을 켠 사람에게는 전환 애니메이션을 끕니다(값 변화는 그대로 보임) */
+:root {
+  /* 글꼴: Basecoat 기본 Geist 는 불러오지 않음(오프라인) → 시스템 + 한글 */
+  --font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* 앱 토큰 */
+  --rec: var(--destructive);         /* 녹화 중 표시 — 측정값에는 쓰지 않음 */
+  --video: #000000;                  /* 웹캠·영상 바탕 */
+  --range-band: color-mix(in oklab, var(--foreground) 22%, transparent); /* 참고 범위 띠(위치만 표시) */
+  --scrim: rgba(0, 0, 0, .6);        /* 영상 위 글자 바탕 */
+
+  /* 글자 크기 */
+  --fs-caption: 12px;
+  --fs-body: 14px;
+  --fs-lead: 16px;
+  --fs-title: 18px;
+  --fs-metric: 24px;
+  --fs-stat: 26px;
+  --fs-clock: 32px;
+
+  /* 간격 (4px 단위) */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px;
+
+  /* 움직임 */
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+
+  /* ---- 이전 화면 CSS 호환 별칭 (Task 3~7에서 화면을 바꾸며 제거) ---- */
+  --bg: var(--background);
+  --panel: var(--card);
+  --panel-2: var(--muted);
+  --text: var(--foreground);
+  --app-accent: var(--chart-1);
+  --accent-text: var(--chart-1);
+  --accent-strong: var(--primary);
+  --accent-bg: var(--muted);
+  --on-accent: var(--primary-foreground);
+  --focus-ring: var(--ring);
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --bad: #ff6467;
+  --bad-text: #ff6467;
+  --bad-bg: color-mix(in oklab, var(--destructive) 18%, var(--card));
+  --idle: var(--muted-foreground);
+  --ok-soft: var(--range-band);
+  --ok-line: var(--border);
+  --series-rate: var(--chart-1);
+  --series-volume: var(--chart-2);
+  --series-pitch: var(--chart-1);
+  --gauge-band: var(--range-band);
+  --btn-primary-bg: var(--primary);
+  --radius-sm: 6px;
+  --radius-pill: 999px;
+  --fs-small: 12px;
+  --fs-number: 22px;
+  --fs-state: var(--fs-metric);
+  --fs-display: var(--fs-clock);
+  --fs-score: 48px;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  :root { --dur-fast: 0ms; --dur-base: 0ms; --dur-slow: 0ms; }
+  :root { --dur-fast: 0ms; --dur-base: 0ms; }
   *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; }
 }

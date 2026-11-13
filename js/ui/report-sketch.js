@@ -4,8 +4,8 @@ import { nearestSample } from '../analysis/review.js';
 import { formatStamp } from '../util/time.js';
 
 const C = { ok: STATUS_COLORS.ok, okDim: '#1f3a24', warn: STATUS_COLORS.warn, bad: STATUS_COLORS.bad, grid: THEME.border,
-  muted: THEME.muted, text: THEME.text, blue: SERIES_COLORS.volume, purple: SERIES_COLORS.pitch, rate: SERIES_COLORS.rate,
-  band: 'rgba(87,148,242,0.12)', panel: THEME.panel };
+  muted: THEME.mutedText, text: THEME.text, blue: SERIES_COLORS.volume, purple: SERIES_COLORS.pitch, rate: SERIES_COLORS.rate,
+  band: 'rgba(87,148,242,0.12)', panel: THEME.card };
 const LANES = [
   { key: 'gaze', label: '시선', h: 0.6 },
   { key: 'rate', label: '속도', h: 1 },
@@ -76,7 +76,7 @@ export function createReportChart(parentEl, samples, report, settings, onSeek = 
       for (let i = 0; i < samples.length; i++) {
         const s = samples[i];
         const x = X(s.t), w = Math.max(1, X(Math.min(samples[i + 1]?.t ?? dur, s.t + 0.1)) - x + 0.5);
-        p.fill(s.frontal == null ? C.grid : s.frontal ? THEME.accent : THEME.muted);
+        p.fill(s.frontal == null ? C.grid : s.frontal ? THEME.accent : THEME.mutedText);
         p.rect(x, g.y + 1, w, g.h - 2);
       }
       // 속도

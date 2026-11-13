@@ -43,7 +43,7 @@ export function createWebcamSketch(parentEl, getState) {
         p.noStroke(); p.fill(cell.col === 0 && cell.row === 0 ? STATUS_COLORS.ok : STATUS_COLORS.bad);
         p.rect(x0 + ((cell.col + 1) * s) / 3 + 2, y0 + ((cell.row + 1) * s) / 3 + 2, s / 3 - 4, s / 3 - 4);
       }
-      p.noStroke(); p.fill(THEME.muted); p.textSize(10); p.textAlign(p.CENTER, p.TOP); p.text('3×3 시선', x0 + s / 2, y0 + s + 3);
+      p.noStroke(); p.fill(THEME.mutedText); p.textSize(10); p.textAlign(p.CENTER, p.TOP); p.text('3×3 시선', x0 + s / 2, y0 + s + 3);
     }
 
     p.draw = () => {
@@ -62,7 +62,7 @@ export function createWebcamSketch(parentEl, getState) {
         ctx.drawImage(v, fit.x, fit.y, fit.w, fit.h);
         ctx.restore();
       } else if (!st.demo) {
-        p.noStroke(); p.fill(THEME.muted); p.textAlign(p.CENTER, p.CENTER); p.textSize(14);
+        p.noStroke(); p.fill(THEME.mutedText); p.textAlign(p.CENTER, p.CENTER); p.textSize(14);
         p.text('카메라를 사용할 수 없어요 · 시선 측정 대기', p.width / 2, p.height / 2);
       }
 
@@ -88,7 +88,7 @@ export function createWebcamSketch(parentEl, getState) {
       if (st.demo) {
         p.noStroke(); p.fill(THEME.accent); p.textAlign(p.CENTER, p.BOTTOM); p.textSize(16); p.textStyle(p.BOLD);
         p.text('데모 모드 · 가상 얼굴입니다', p.width / 2, p.height - 34);
-        p.fill(THEME.muted); p.textSize(12); p.textStyle(p.NORMAL);
+        p.fill(THEME.mutedText); p.textSize(12); p.textStyle(p.NORMAL);
         p.text(st.demoHint ?? '내 얼굴로 연습하려면 위쪽 [실제 카메라로 전환]을 누르세요', p.width / 2, p.height - 14);
       }
       if (st.grid !== undefined) drawGrid(st.grid);

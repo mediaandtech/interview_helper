@@ -26,7 +26,7 @@ export function createSparkline(parentEl, getSeries) {
       p.drawingContext.setLineDash([3, 4]); p.line(0, p.height / 2, p.width, p.height / 2); p.drawingContext.setLineDash([]);
       const pts = cleanPitch(points);
       if (!pts.length) {
-        p.noStroke(); p.fill(THEME.muted); p.textSize(11); p.textAlign(p.CENTER, p.CENTER);
+        p.noStroke(); p.fill(THEME.mutedText); p.textSize(11); p.textAlign(p.CENTER, p.CENTER);
         p.text('말하면 억양이 그려져요', p.width / 2, p.height / 2 - 10);
         return;
       }

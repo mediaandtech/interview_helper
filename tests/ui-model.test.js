@@ -41,6 +41,6 @@ test('gauge math', () => {
 });
 
 test('theme and status colors live in config', () => {
-  assert.equal(THEME.bg, '#111820'); assert.equal(THEME.panel, '#1d2935');
-  assert.deepEqual([STATUS_COLORS.ok, STATUS_COLORS.warn, STATUS_COLORS.bad], ['#73bf69', '#ff9830', '#f2495c']);
+  assert.equal(THEME.bg, '#0a0a0a'); assert.equal(THEME.card, '#171717');
+  assert.deepEqual([STATUS_COLORS.ok, STATUS_COLORS.warn, STATUS_COLORS.bad], ['#4ade80', '#fbbf24', '#ff6467']);
 });
