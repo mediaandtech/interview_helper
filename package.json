@@ -15,7 +15,7 @@
     "prestart": "node scripts/check-env.mjs",
     "predev": "node scripts/check-env.mjs"
   },
-  "description": "브라우저에서 면접 답변을 기록하고 직접 복기하는 도구",
+  "description": "브라우저에서 화상 인터뷰 속 내 목소리와 시선을 모니터링하고 스스로 분석하는 도구",
   "engines": {
     "node": ">=22"
   },

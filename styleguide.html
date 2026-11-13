@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>답변 복기 디자인 시스템</title>
+  <title>셀프 모니터 디자인 시스템</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="vendor/basecoat/basecoat.cdn.min.css">
   <link rel="stylesheet" href="css/tokens.css">
@@ -46,7 +46,7 @@
     `<div class="sw"><i style="background:var(${token})"></i><div><b>${name}</b><code>${token}</code> · ${hex}<br><span class="hint">${use}</span></div></div>`).join('');
 
   document.getElementById('sg').innerHTML = `
-  <h1>답변 복기 디자인 시스템</h1>
+  <h1>셀프 모니터 디자인 시스템</h1>
   <p class="lead">Basecoat UI(shadcn/ui 디자인 언어) 다크 테마 위에 앱 토큰과 배치를 얹었습니다. 이 페이지의 모든 부품은 실제 앱과 같은 <code>js/ui/components.js</code> 함수와 CSS로 그려집니다.</p>
 
   <h2>원칙</h2>
@@ -74,7 +74,7 @@
   ])}</div>
 
   <h2>글자</h2>
-  ${[['--fs-clock', '01:24', '답변 중 타이머'], ['--fs-stat', '82%', '관찰 요약 숫자'], ['--fs-metric', '참고 범위 안', '지표 카드 문구'],
+  ${[['--fs-clock', '01:24', '모니터링 중 타이머'], ['--fs-stat', '82%', '관찰 요약 숫자'], ['--fs-metric', '참고 범위 안', '지표 카드 문구'],
      ['--fs-title', '단계별 결과', '카드 제목'], ['--fs-lead', '● 정면  누적 84%', '시선 알약·안내'], ['--fs-body', '본문, 표, 입력', '본문'], ['--fs-caption', '말하기 속도 · 음절/분', '라벨·도움말(최소)']]
     .map(([t, txt, use]) => `<div class="typerow"><code>${t}<br><span class="hint">${use}</span></code><div style="font-size:var(${t});font-weight:${t === '--fs-body' || t === '--fs-caption' ? 400 : 700};font-variant-numeric:tabular-nums">${txt}</div></div>`).join('')}
 
@@ -87,40 +87,40 @@
 
   <h3>버튼 — button()</h3>
   <div class="row">
-    ${button({ label: '답변 시작', size: 'lg' })}${button({ label: '같은 질문 다시 답변' })}${button({ label: '이전 답변과 비교', variant: 'outline' })}
-    ${button({ label: '데모로 체험', variant: 'ghost' })}${button({ label: '답변 끝내기 (Esc)', variant: 'destructive' })}
+    ${button({ label: '모니터링 시작', size: 'lg' })}${button({ label: '같은 조건으로 다시 하기' })}${button({ label: '이전 기록과 비교', variant: 'outline' })}
+    ${button({ label: '데모로 체험', variant: 'ghost' })}${button({ label: '모니터링 끝내기 (Esc)', variant: 'destructive' })}
     ${button({ label: '메모 추가', size: 'sm' })}${button({ label: '비활성', attrs: 'disabled' })}
   </div>
 
   <h3>배지 — badge()</h3>
-  <div class="row">${badge({ label: '질문', variant: 'secondary' })}${badge({ label: '고개 정면', variant: 'outline' })}${badge({ label: '● 녹화 중', variant: 'destructive' })}${badge({ label: '기본' })}</div>
+  <div class="row">${badge({ label: '이름표', variant: 'secondary' })}${badge({ label: '고개 정면', variant: 'outline' })}${badge({ label: '● 녹화 중', variant: 'destructive' })}${badge({ label: '기본' })}</div>
 
   <h3>카드 · 입력 — card() field() switchField() segmented()</h3>
   <div class="grid g2">
-    ${card({ title: '연습할 질문', description: '점수나 자동 평가 없이, 답변을 기록하고 직접 돌아봐요.', html: `<div class="stack">
-      ${field({ label: '질문 또는 답변 주제', forId: 'sg-q', controlHtml: '<textarea class="textarea" id="sg-q" rows="2" placeholder="예: 지원 동기를 말씀해 주세요."></textarea>' })}
-      ${field({ label: '참고 범위 프리셋', controlHtml: segmented({ name: 'sg', value: 'b', options: [{ value: 'a', label: '수업 발표' }, { value: 'b', label: '면접 답변' }, { value: 'c', label: '피칭·공모전' }] }) })}
-      ${field({ label: '답변 시간', controlHtml: '<div class="inline"><input class="input num" value="2"> 분 <input class="input num" value="0"> 초</div>', hint: '시간이 지나도 측정은 계속돼요.' })}</div>`,
-      footerHtml: `${button({ label: '다시 측정', variant: 'outline' })}${button({ label: '답변 시작', size: 'lg' })}` })}
-    ${card({ title: '기록 방식', html: `<div class="stack">${switchField({ id: 'sg-a', label: '답변을 녹화·녹음해서 다시 보기', hint: '이 탭에만 보관돼요.' })}${switchField({ id: 'sg-b', label: '답변 중에는 측정값 숨기기', hint: '복기 때 확인해요.', checked: true })}
-      ${field({ label: '비교할 답변', forId: 'sg-s', controlHtml: '<select class="select" id="sg-s"><option>답변 2 · 오후 1:58</option></select>' })}
+    ${card({ title: '연습 이름표 (선택)', description: '화면 속 내 목소리와 시선을 보면서 스스로 분석해요. 점수나 자동 평가는 없어요.', html: `<div class="stack">
+      ${field({ label: '이름표 (같은 이름표끼리 비교해요)', forId: 'sg-q', controlHtml: '<textarea class="textarea" id="sg-q" rows="2" placeholder="예: 지원 동기 · 1차"></textarea>' })}
+      ${field({ label: '참고 범위 프리셋', controlHtml: segmented({ name: 'sg', value: 'b', options: [{ value: 'a', label: '수업 발표' }, { value: 'b', label: '화상 면접' }, { value: 'c', label: '피칭·공모전' }] }) })}
+      ${field({ label: '목표 시간', controlHtml: '<div class="inline"><input class="input num" value="2"> 분 <input class="input num" value="0"> 초</div>', hint: '시간이 지나도 측정은 계속돼요.' })}</div>`,
+      footerHtml: `${button({ label: '다시 측정', variant: 'outline' })}${button({ label: '모니터링 시작', size: 'lg' })}` })}
+    ${card({ title: '기록 방식', html: `<div class="stack">${switchField({ id: 'sg-a', label: '화면과 목소리를 녹화·녹음해서 다시 보기', hint: '이 탭에만 보관돼요.' })}${switchField({ id: 'sg-b', label: '말하는 동안 측정값 숨기기', hint: '끝난 뒤 분석 화면에서 확인해요.', checked: false })}
+      ${field({ label: '비교할 기록', forId: 'sg-s', controlHtml: '<select class="select" id="sg-s"><option>기록 2 · 오후 1:58</option></select>' })}
       ${field({ label: '확인할 위치', forId: 'sg-r', controlHtml: '<input class="input" id="sg-r" type="range" min="0" max="100" value="35">' })}</div>` })}
   </div>
 
   <h3>탭 — tabs() + bindTabs()</h3>
   <div class="grid g2">${card({ title: '메모', html: tabs({ id: 'sg-memo', selected: 'here', items: [
     { id: 'here', label: '현재 위치', html: '<p class="hint">0:39 위치에 남긴 메모가 여기에 보여요.</p>' },
-    { id: 'all', label: '전체 복기', html: '<p class="hint">답변 전체에 대한 생각을 적어요.</p>' }] }) })}
+    { id: 'all', label: '전체 메모', html: '<p class="hint">이번 기록 전체에 대한 생각을 적어요.</p>' }] }) })}
     ${card({ title: '준비 확인 — checklist()', html: checklist([{ key: 'a', title: '카메라를 정면으로 바라보세요' }, { key: 'b', title: '아래 문장을 평소 목소리로 읽어 주세요' }]) + '<div class="progress" style="margin-top:12px"><span style="width:62%"></span></div>' })}</div>
 
   <h3>관찰 요약 — statGrid() · 표 — dataTable() · 빈 상태 — emptyState()</h3>
   <div class="grid g3">
     ${card({ title: '관찰 요약', html: statGrid([{ label: '정면 범위 안', value: '82%', sub: '얼굴 검출 1:52 기준' }, { label: '속도 추정 평균', value: '288', sub: '음절/분' }]) })}
     ${card({ title: '참고 범위와 다른 구간', html: dataTable({ columns: ['시작', '내용', '길이'], rowsHtml: ['<tr><td>0:34</td><td>정면 범위 밖</td><td>5.0초</td></tr>', '<tr><td>1:36</td><td>기준보다 작은 음량</td><td>18.0초</td></tr>'] }) })}
-    ${card({ className: 'video-card', html: emptyState({ title: '녹화가 없어요', text: '녹화하지 않은 답변입니다.' }) })}
+    ${card({ className: 'video-card', html: emptyState({ title: '녹화가 없어요', text: '녹화하지 않은 기록입니다.' }) })}
   </div>
 
-  <h3>답변 중 표시 — metricCard() · 게이지 · 진행 막대 · 시선 알약</h3>
+  <h3>모니터링 중 표시 — metricCard() · 게이지 · 진행 막대 · 시선 알약</h3>
   <div class="grid g3">
     ${metricCard({ id: 'sg-rate', title: '말하기 속도 · 음절/분', numId: 'sg-rate-n', stateId: 'sg-rate-s', extraHtml: '<div id="sg-g1"></div>' })}
     ${metricCard({ id: 'sg-vol', title: '목소리 크기', numId: 'sg-vol-n', stateId: 'sg-vol-s', extraHtml: '<div id="sg-g2"></div>' })}

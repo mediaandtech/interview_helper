@@ -1,4 +1,4 @@
-# 답변 복기 디자인 시스템 — MASTER
+# 셀프 모니터 디자인 시스템 — MASTER
 
 > 화면을 만들거나 고칠 때 이 문서가 기준입니다. 화면별 규칙은 `pages/<화면>.md`가 우선합니다.
 > 살아 있는 예시: `styleguide.html` (실제 컴포넌트 함수·CSS로 그려짐)
@@ -7,7 +7,7 @@
 
 | 항목 | 내용 |
 |---|---|
-| 제품 | 면접 답변을 녹화·측정한 뒤 **직접** 돌아보는 도구 (점수·자동 평가 없음) |
+| 제품 | 화상 인터뷰 화면 속 내 목소리·시선을 모니터링하고 **스스로** 분석하는 도구 (점수·자동 평가 없음) |
 | UI 라이브러리 | **Basecoat UI 1.1.0** (shadcn/ui 디자인 언어, React 없음) — `vendor/basecoat/basecoat.cdn.min.css` 로컬 로드 |
 | 테마 | 기본 스타일 팩(Vega), 다크 무채색 — `<html class="dark">` |
 | 빌드 | 없음. Tailwind 유틸리티 클래스는 쓰지 않음(CDN CSS에 없음). 배치는 `css/app.css` |
@@ -61,7 +61,7 @@
 | `segmented({ name, options, value })` | 탭 모양 단일 선택(`change` 이벤트) | `.tabs [role=tab]` |
 | `tabs({ id, items, selected })` + `bindTabs(root)` | 탭+패널(숨겨도 DOM 유지) | `.tabs [role=tablist]/[role=tabpanel]` |
 | `statGrid(items)` | 관찰 요약 숫자 | — |
-| `metricCard({ id, title, numId, stateId, extraHtml })` | 답변 중 지표 카드(중립) | `.card` |
+| `metricCard({ id, title, numId, stateId, extraHtml })` | 모니터링 중 지표 카드(중립) | `.card` |
 | `checklist(items)` | 준비 확인 단계 | — |
 | `emptyState({ title, text })` | 빈 상태 | `.empty` |
 | `dataTable({ columns, rowsHtml })` | 표 | `.table-container > .table` |

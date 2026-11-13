@@ -55,7 +55,7 @@ Linux에서 브라우저 시스템 라이브러리가 없으면 `npx playwright 
 |---|---|
 | 개인별 시선·음성 기준 | `js/config.js`, `js/analysis/` |
 | 장치 접근 | `js/sensors/` |
-| 화면 흐름·기록·복기 | `js/ui/`, `js/media-recorder.js` |
+| 화면 흐름·기록·분석 | `js/ui/`, `js/media-recorder.js` |
 | 디자인 토큰·배치 | `css/tokens.css`, `css/app.css` |
 | 재사용 UI | `js/ui/components.js`, `/styleguide.html` |
 | 개발 서버 | `scripts/serve.mjs` |
