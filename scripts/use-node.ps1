@@ -14,7 +14,7 @@ if ($nodeVersion -notmatch '^\d+\.\d+\.\d+$') {
 }
 
 if (-not $CheckOnly) {
-  $nvmCommand = Get-Command nvm.exe -CommandType Application -ErrorAction SilentlyContinue
+  $nvmCommand = Get-Command nvm.exe -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
   if (-not $nvmCommand) {
     throw 'Install nvm-windows first: https://github.com/nvm-windows/nvm . Then open a new PowerShell terminal and run this script again.'
   }
@@ -28,7 +28,8 @@ if (-not $CheckOnly) {
   }
 }
 
-$nodeCommand = Get-Command node.exe -CommandType Application -ErrorAction SilentlyContinue
+# PATH에 node.exe가 여러 개면 배열이 반환되므로, 실제로 실행되는 첫 번째 것만 사용
+$nodeCommand = Get-Command node.exe -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
 if (-not $nodeCommand) {
   throw 'node.exe was not found on PATH. Open a new terminal after installing Node.js.'
 }
