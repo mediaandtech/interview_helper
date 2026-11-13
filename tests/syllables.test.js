@@ -1,12 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { countHangulSyllables, createSyllableEstimator } from '../js/analysis/syllables.js';
-
-test('countHangulSyllables', () => {
-  assert.equal(countHangulSyllables('안녕하세요, 발표를 시작하겠습니다'), 15);
-  assert.equal(countHangulSyllables('AI 3개'), 1);
-  assert.equal(countHangulSyllables(''), 0);
-});
+import { createSyllableEstimator } from '../js/analysis/syllables.js';
 
 const envelope = (t) => -40 + 15 * Math.sin(Math.PI * ((t % 200) / 200));
 

@@ -7,7 +7,7 @@ const GAP_SEC = 0.35;
 
 /**
  * @param {HTMLElement} parentEl
- * @param {() => { points: {t:number, hz:number}[], now: number, windowSec: number, refHz: number|null, status: string }} getSeries
+ * @param {() => { points: {t:number, hz:number}[], now: number, windowSec: number, refHz: number|null }} getSeries
  */
 export function createSparkline(parentEl, getSeries) {
   return new p5((p) => {
@@ -20,7 +20,7 @@ export function createSparkline(parentEl, getSeries) {
     p.windowResized = () => { const [w, h] = size(); p.resizeCanvas(w, h); };
     p.draw = () => {
       p.clear();
-      const { points, now, windowSec, refHz, status } = getSeries();
+      const { points, now, windowSec, refHz } = getSeries();
       // 기준선(내 평소 음높이)
       p.stroke(THEME.border); p.strokeWeight(1);
       p.drawingContext.setLineDash([3, 4]); p.line(0, p.height / 2, p.width, p.height / 2); p.drawingContext.setLineDash([]);

@@ -183,7 +183,7 @@ export function enter(appRef, payload = {}) {
   $('clear-history').onclick = () => {
     stopPlayers();
     for (const session of new Set([...app.reviewSessions,current])) release(session);
-    app.reviewSessions=[]; app.lastReview=null; app.lastSamples=[]; app.lastReport=null;
+    app.reviewSessions=[]; app.lastReview=null;
     current=null; app.go('setup');
   };
   const previous = current.demo || !current.settings.question ? [] : app.reviewSessions.filter(x => x !== current && x.settings.question === current.settings.question);

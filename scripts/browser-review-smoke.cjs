@@ -50,7 +50,7 @@ const {launchBrowser,artifactPath}=require('./browser-support.cjs');
        audio:{stream:destination.stream,read:()=>({db:-25,speaking:true,hz:180}),stop(){destination.stream.getTracks().forEach(t=>t.stop());audioCtx.close();}},
        gaze:{video,detect:()=>({face:{yaw:0,pitch:0,eye:{}},landmarks:null}),stop(){stream.getTracks().forEach(t=>t.stop());}},
      };
-     app.settings={presetKey:'interview',question:'동일 질문',durationSec:60,rateMin:260,rateMax:320,gazeTarget:.85,focusMode:true,recordAnswer:true,calib:{baseDb:-25,baseHz:180,yaw0:0,pitch0:0,eye0:{}}};
+     app.settings={presetKey:'interview',question:'동일 질문',durationSec:60,rateMin:260,rateMax:320,focusMode:true,recordAnswer:true,calib:{baseDb:-25,baseHz:180,yaw0:0,pitch0:0,eye0:{}}};
      app.go('practice');
    });
    await page.waitForTimeout(4700);

@@ -13,7 +13,6 @@ export const app = {
   settings: null,      // Settings (setup이 채움)
   sensors: { audio: null, gaze: null },
   demo: new URLSearchParams(location.search).has('demo'),
-  lastSamples: [],
   current: null,
   debug: new URLSearchParams(location.search).has('debug'),
 

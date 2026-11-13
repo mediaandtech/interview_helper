@@ -1,14 +1,5 @@
-// 음절 세기: 인식된 텍스트의 한글 음절 수, 그리고 음량 봉우리로 실시간 추정
+// 음량 봉우리로 음절 수를 실시간 추정
 import { SYLLABLE } from '../config.js';
-
-export function countHangulSyllables(text) {
-  let n = 0;
-  for (const ch of text) {
-    const c = ch.codePointAt(0);
-    if (c >= 0xac00 && c <= 0xd7a3) n++;
-  }
-  return n;
-}
 
 /**
  * 음량 포락선에서 '오르다가 내려가기 시작하는 지점'을 음절 하나로 셉니다.

@@ -97,7 +97,6 @@ function newState(settings) {
     hzHist: [],          // 최근 10초 { t, hz }
     speakHist: [],       // 최근 10초 { t, speaking }
     volHist: [],         // 최근 1초 말한 샘플의 기준 대비 dB
-    pitchStatus: 'idle',
     recording: null,
     sketches: [],
     ui: {},
@@ -181,7 +180,7 @@ function tick() {
 
   render({ tt, rate, volDelta, speaking, st });
   debugLine({ t: tt, db: db ?? 0, deltaDb: deltaDb ?? 0, speaking: String(speaking), hz: hz ?? 0,
-    rate: rate ?? 0, corr: s.rate.correction(), gaze: `${g.status} ${g.dir}`, cum: g.cumulative ?? 0, st: st ?? 0 });
+    rate: rate ?? 0, gaze: `${g.status} ${g.dir}`, cum: g.cumulative ?? 0, st: st ?? 0 });
 }
 
 function render({ tt, rate, volDelta, speaking, st }) {
@@ -194,7 +193,6 @@ function render({ tt, rate, volDelta, speaking, st }) {
   setText($('l-vol'), !app.sensors.audio ? WAIT : volDelta == null ? '발화 미검출' : '기준 대비 변화');
   setText($('v-vol'), volDelta == null ? '기준 대비 —' : `${volDelta >= 0 ? '+' : ''}${volDelta.toFixed(1)} dB`);
   s.ui.vol.update(volDelta, 'idle');
-  s.pitchStatus = 'idle';
   setText($('l-pitch'), st == null ? WAIT : `${st.toFixed(1)} 반음`);
   setText($('v-pitch'), st == null ? '' : '음높이 변화량');
   const diff = settings.durationSec - tt;
@@ -342,7 +340,7 @@ export function enter(appRef) {
   })));
   s.sketches.push(createSparkline($('spark'), () => ({
     points: s.hzHist, now: s.phase === 'live' ? t() : 0, windowSec: PITCH.windowSec,
-    refHz: s.settings.calib.baseHz, status: s.pitchStatus,
+    refHz: s.settings.calib.baseHz,
   })));
 
   raf = requestAnimationFrame(loop);

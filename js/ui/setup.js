@@ -108,10 +108,9 @@ function readForm() {
   const durationSec = Math.min(30 * 60, Math.max(60, m * 60 + s));
   let rateMin = num('#rate-min', p.rateMin), rateMax = num('#rate-max', p.rateMax);
   if (rateMin > rateMax) [rateMin, rateMax] = [rateMax, rateMin];
-  const gazeTarget = p.gazeTarget;
   const gazeLimits = { yawDeg: Math.min(90,Math.max(1,num('#gaze-yaw',GAZE.yawDeg))), pitchDeg: Math.min(90,Math.max(1,num('#gaze-pitch',GAZE.pitchDeg))) };
   rateMin = Math.max(1, Math.min(1000, rateMin)); rateMax = Math.max(rateMin, Math.min(1000, rateMax));
-  return { presetKey: state.presetKey, durationSec, rateMin, rateMax, gazeTarget, gazeLimits, eyeMethod:root.querySelector('#eye-method').value, question: root.querySelector('#question').value.trim(), recordAnswer: root.querySelector('#record-answer').checked, focusMode: root.querySelector('#focus-mode').checked };
+  return { presetKey: state.presetKey, durationSec, rateMin, rateMax, gazeLimits, eyeMethod:root.querySelector('#eye-method').value, question: root.querySelector('#question').value.trim(), recordAnswer: root.querySelector('#record-answer').checked, focusMode: root.querySelector('#focus-mode').checked };
 }
 
 function applyPreset(key) {

@@ -33,7 +33,7 @@ npm.cmd start
 - `npm start` / `npm run dev`: 캐시 없는 로컬 서버 실행, 별도 빌드 없음
 - `npm test`: 단위·회귀 테스트
 - `npm run setup:browser`: 브라우저 검증용 Chromium 최초 설치
-- `npm run test:browser`: 임시 서버를 자동 실행해 복기·시선·인쇄 검증
+- `npm run test:browser`: 로컬에서 임시 서버를 자동 실행해 복기·시선·인쇄 검증 (CI에서는 실행하지 않음)
 
 런타임 외부 패키지와 API 키는 필요하지 않습니다. Playwright는 개발 검증에만 사용합니다. 검증 결과는 Git에서 제외되는 `.artifacts/`에 저장합니다. 배포는 정적 파일을 HTTPS로 제공하면 됩니다. `file://` 대신 로컬 서버를 사용하세요.
 
@@ -91,7 +91,7 @@ npm.cmd start
 - `vendor/`: p5 및 MediaPipe 모델·WASM
 - `tests/`: 단위·회귀 테스트
 
-기존 `analysis/scoring.js`, `sensors/speech.js` 등 이전 평가·음성 인식 모듈은 회귀 참조용으로 남아 있지만 현재 화면 실행 경로에서 사용하지 않습니다. `docs/superpowers/`는 이전 발표 대시보드 설계 기록이며, 현재 동작은 이 README를 기준으로 합니다.
+이전 종합 평가·자동 조언·외부 음성 인식 모듈은 제거했습니다. 말하기 속도는 로컬 마이크의 음량 변화로만 추정하며, 복기는 `analysis/review.js`의 관찰 요약을 사용합니다. `docs/superpowers/`는 이전 발표 대시보드 설계 기록이며, 현재 동작은 이 README를 기준으로 합니다.
 
 ## 개인별 시선 보정과 확인
 

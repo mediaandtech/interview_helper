@@ -16,13 +16,3 @@ export function formatStamp(sec) {
   const { m, s } = split(sec);
   return `${m}:${pad(s)}`;
 }
-
-/** 24 -> '+0:24', -24 -> '-0:24' */
-export function formatOver(sec) {
-  return `${sec < 0 ? '-' : '+'}${formatStamp(sec)}`;
-}
-
-/** 24 -> '+00:24' (실시간 타이머의 초과 시간) */
-export function formatOverClock(sec) {
-  return `${sec < 0 ? '-' : '+'}${formatClock(sec)}`;
-}
