@@ -1,11 +1,12 @@
 // p5 인스턴스: 같은 시간축에 쌓은 4줄 그래프(시선 / 속도 / 크기 / 높낮이) + 마우스 툴팁
-import { THEME, STATUS_COLORS, SERIES_COLORS } from '../config.js';
+import { THEME, SERIES_COLORS } from '../config.js';
 import { nearestSample } from '../analysis/review.js';
 import { formatStamp } from '../util/time.js';
 
-const C = { ok: STATUS_COLORS.ok, okDim: '#1f3a24', warn: STATUS_COLORS.warn, bad: STATUS_COLORS.bad, grid: THEME.border,
-  muted: THEME.mutedText, text: THEME.text, blue: SERIES_COLORS.volume, purple: SERIES_COLORS.pitch, rate: SERIES_COLORS.rate,
-  band: 'rgba(87,148,242,0.12)', panel: THEME.card };
+const C = { grid: THEME.border, muted: THEME.mutedText, text: THEME.text, panel: THEME.card,
+  rate: SERIES_COLORS.rate, volume: SERIES_COLORS.volume, pitch: SERIES_COLORS.pitch,
+  gazeIn: SERIES_COLORS.gazeIn, gazeOut: SERIES_COLORS.gazeOut, gazeNone: SERIES_COLORS.gazeNone,
+  band: 'rgba(250,250,250,0.08)' }; // 참고 범위 음영: 위치만 보여 주는 중립 회색
 const LANES = [
   { key: 'gaze', label: '시선', h: 0.6 },
   { key: 'rate', label: '속도', h: 1 },
@@ -76,7 +77,7 @@ export function createReportChart(parentEl, samples, report, settings, onSeek = 
       for (let i = 0; i < samples.length; i++) {
         const s = samples[i];
         const x = X(s.t), w = Math.max(1, X(Math.min(samples[i + 1]?.t ?? dur, s.t + 0.1)) - x + 0.5);
-        p.fill(s.frontal == null ? C.grid : s.frontal ? THEME.accent : THEME.mutedText);
+        p.fill(s.frontal == null ? C.gazeNone : s.frontal ? C.gazeIn : C.gazeOut);
         p.rect(x, g.y + 1, w, g.h - 2);
       }
       // 속도
@@ -84,9 +85,9 @@ export function createReportChart(parentEl, samples, report, settings, onSeek = 
       series('rate', (s) => s.rate, 0, rateMax, C.rate);
       // 크기
 
-      series('vol', (s) => (s.speaking ? s.deltaDb : null), -20, 20, C.blue);
+      series('vol', (s) => (s.speaking ? s.deltaDb : null), -20, 20, C.volume);
       // 높낮이
-      series('pitch', (s) => (s.hz ? 12 * Math.log2(s.hz / refHz) : null), -8, 8, C.purple);
+      series('pitch', (s) => (s.hz ? 12 * Math.log2(s.hz / refHz) : null), -8, 8, C.pitch);
       // 시간축
       const step = dur > 600 ? 120 : dur > 240 ? 60 : dur > 90 ? 30 : 10;
       p.fill(C.muted); p.noStroke(); p.textSize(10); p.textAlign(p.CENTER, p.TOP);
@@ -132,7 +133,7 @@ export function createReportChart(parentEl, samples, report, settings, onSeek = 
       let x = p.mouseX + 12; if (x + w > p.width - 4) x = p.mouseX - 12 - w;
       const y = Math.min(p.height - h - 4, Math.max(4, p.mouseY - h / 2));
       p.noStroke(); p.fill(0, 0, 0, 220); p.rect(x, y, w, h, 3);
-      lines.forEach((l, i) => { p.fill(i === 2 ? C.warn : C.text); p.text(l, x + 8, y + 6 + i * 17, w - 16); });
+      lines.forEach((l, i) => { p.fill(i === 2 ? C.muted : C.text); p.text(l, x + 8, y + 6 + i * 17, w - 16); });
     };
   });
 }

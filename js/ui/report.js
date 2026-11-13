@@ -3,6 +3,7 @@ import { buildReview, nearestSample } from '../analysis/review.js';
 import { formatClock } from '../util/time.js';
 import { escapeHtml as esc } from '../util/html.js';
 import { createReportChart } from './report-sketch.js';
+import { badge, button, card, field, statGrid, tabs, bindTabs, dataTable, emptyState } from './components.js';
 
 let app, root, chart, current, printHandlers;
 const n = (v, suffix = '', digits = 0) => v == null ? '측정 없음' : `${v.toFixed(digits)}${suffix}`;
@@ -15,62 +16,81 @@ function release(session) {
 }
 
 function stats(r) {
-  const values = [
-    ['정면 범위 안', n(r.frontalPct, '%'), `얼굴 검출 표본 ${r.faceCoverageSec.toFixed(1)}초 기준`],
-    ['속도 추정 평균', n(r.avgRate), `음절/분 · 측정 ${r.rateCoverageSec.toFixed(1)}초`],
-    ['기준 대비 음량', n(r.avgDeltaDb, ' dB', 1), `발화 추정 ${r.speakingSec.toFixed(1)}초 기준`],
-    ['음높이 변화량', n(r.pitchSt, ' 반음', 1), '발화 중 검출한 음높이의 분산 정도'],
-    ['답변 시간', formatClock(r.durationSec), `표본 기록 ${r.sampledSec.toFixed(1)}초`],
-  ];
-  return values.map(([label,value,sub]) => `<div class="panel stat"><div class="title">${label}</div><div class="value">${value}</div><div class="sub">${sub}</div></div>`).join('');
+  return statGrid([
+    { label: '정면 범위 안', value: n(r.frontalPct, '%'), sub: `얼굴 검출 표본 ${r.faceCoverageSec.toFixed(1)}초 기준` },
+    { label: '속도 추정 평균', value: n(r.avgRate), sub: `음절/분 · 측정 ${r.rateCoverageSec.toFixed(1)}초` },
+    { label: '기준 대비 음량', value: n(r.avgDeltaDb, ' dB', 1), sub: `발화 추정 ${r.speakingSec.toFixed(1)}초 기준` },
+    { label: '음높이 변화량', value: n(r.pitchSt, ' 반음', 1), sub: '발화 중 검출한 음높이의 분산 정도' },
+    { label: '답변 시간', value: formatClock(r.durationSec), sub: `표본 기록 ${r.sampledSec.toFixed(1)}초` },
+  ]);
 }
 
 function player(session, id) {
   return session.url ? `<video id="${id}" controls playsinline preload="metadata" src="${esc(session.url)}" aria-label="${id === 'answer-player' ? '현재' : '이전'} 답변 재생"></video>`
-    : `<p class="sub">${esc(session.media.message || '녹화 파일이 없습니다.')}</p>`;
+    : emptyState({ title: '녹화가 없어요', text: session.media.message || '녹화 파일이 없습니다.' });
 }
 
 function template(session) {
   const r = session.review;
-  return `<div class="report self-review">
-    <div class="panel hero"><div class="hero-text"><b>${session.demo ? '데모 데이터 살펴보기' : '내 답변 돌아보기'}</b>
-      <p class="question">${esc(session.settings.question || '자유 답변')}</p>
-      <div class="sub">${esc(session.date)} · 설정 ${formatClock(session.settings.durationSec)} / 답변 ${formatClock(r.durationSec)} · 자동 점수·평가 없음</div></div></div>
-    <div class="stats">${stats(r)}</div>
-    <p class="review-help">측정값은 관찰을 돕는 참고 정보입니다. 속도는 음량 변화 기반 추정이며, 정면 비율은 얼굴이 검출된 표본만 사용합니다. 검출 실패·기록 공백은 행동 평가에 사용하지 않습니다.</p>
+  const video = card({
+    className: 'video-card',
+    html: player(session, 'answer-player'),
+    footerHtml: `${button({ label: '녹화 파일 다운로드', id: 'download-media', variant: 'outline', size: 'sm', attrs: session.url ? '' : 'disabled' })}
+      ${button({ label: '이 녹화 삭제', id: 'delete-media', variant: 'ghost', size: 'sm', attrs: session.url ? '' : 'disabled' })}
+      <span class="hint">녹화는 원본 카메라 방향이라 미리보기와 좌우가 다를 수 있어요.</span>`,
+  });
+  const timeline = card({
+    title: '시간 흐름',
+    description: '그래프를 누르거나 아래 슬라이더로 위치를 고르면 영상이 그 위치로 이동해요. 정면 띠: 진한 파랑 = 참고 범위 안, 회색 = 범위 밖, 어두운색 = 검출 없음. 회색 음영은 내가 정한 참고 범위예요.',
+    html: `<div class="chart" id="report-chart" role="img" aria-label="정면 범위·속도·음량·음높이 시간 그래프. 아래 시간 선택으로 값을 읽을 수 있습니다."></div>
+      <div class="scrub"><label class="label" for="review-time">확인할 위치 <output id="review-clock">00:00</output></label>
+      <input class="input" id="review-time" type="range" min="0" max="${r.durationSec}" step="0.1" value="0"></div>
+      <p id="sample-description" class="hint sample-description"></p>`,
+  });
+  const summary = card({ title: '관찰 요약', description: '판정이 아닌 측정값이에요. 속도는 음량 변화 기반 추정이고, 정면 비율은 얼굴이 검출된 표본만 써요.', html: stats(r) });
+  const memo = card({
+    title: '메모',
+    html: tabs({ id: 'memo', selected: 'here', items: [
+      { id: 'here', label: '현재 위치', html: `<div class="stack">
+          ${field({ label: '이 위치에 메모', forId: 'marker-note', controlHtml: `<div class="inline"><input class="input" id="marker-note" type="text" maxlength="500" placeholder="직접 발견한 부분을 적어 주세요.">${button({ label: '메모 추가', id: 'add-marker', size: 'sm' })}</div>` })}
+          <ul id="markers" class="markers"></ul></div>` },
+      { id: 'all', label: '전체 복기', html: `<div class="stack">
+          ${field({ label: '전달한 핵심, 다시 볼 부분, 다음에 바꾸고 싶은 점', forId: 'reflection', controlHtml: `<textarea class="textarea" id="reflection" rows="5" maxlength="10000" placeholder="영상과 측정값을 보고 내 생각을 적어 보세요.">${esc(session.reflection)}</textarea>` })}
+          <p class="hint" id="note-state" role="status">메모는 현재 탭에서 유지돼요. 필요한 내용은 다운로드하세요.</p>
+          <div>${button({ label: '측정값·메모 다운로드', id: 'download-notes', variant: 'outline', size: 'sm' })}</div></div>` },
+    ] }),
+  });
+  const rows = r.intervals.map((i) => `<tr><td><button type="button" class="btn" data-variant="link" data-size="sm" data-seek="${i.start}">${formatClock(i.start)}</button></td><td>${esc(i.label)}</td><td>${i.dur.toFixed(1)}초</td></tr>`);
+  const intervals = card({
+    title: '참고 범위와 다른 구간',
+    description: '1초 이상 이어진 구간이에요. 개선할 부분인지는 재생해 보고 직접 판단하세요.',
+    html: r.intervals.length ? `<div class="intervals">${dataTable({ columns: ['시작', '내용', '길이'], rowsHtml: rows })}</div>`
+      : emptyState({ title: '표시할 구간이 없어요', text: '측정 부족일 수도 있으며 수행 평가를 의미하지 않아요.' }),
+  });
+  const comparison = card({
+    id: 'comparison', className: 'comparison',
+    title: '같은 질문의 이전 답변과 비교',
+    html: `${field({ label: '현재 탭에서 연습한 답변 선택', forId: 'previous-answer', controlHtml: '<select class="select" id="previous-answer"><option value="">비교할 답변 선택</option></select>' })}
+      <div id="comparison-content"><p class="hint">같은 질문으로 다시 연습하면 이전 답변을 함께 볼 수 있어요. 데모는 비교 기록에 넣지 않아요.</p></div>`,
+  });
+  return `<div class="report review">
+    <div class="qline">${badge({ label: '질문', variant: 'secondary' })}<b class="q">${esc(session.settings.question || '자유 답변')}</b>
+      <span class="hint">${session.demo ? '데모 데이터 · ' : ''}${esc(session.date)} · 설정 ${formatClock(session.settings.durationSec)} / 답변 ${formatClock(r.durationSec)} · 자동 점수·평가 없음</span></div>
     <div class="review-grid">
-      <div class="panel playback"><h2>답변 다시 보기</h2>${player(session,'answer-player')}
-        <div class="report-actions"><button class="btn" id="download-media" ${session.url ? '' : 'disabled'}>녹화 파일 다운로드</button>
-        <button class="btn" id="delete-media" ${session.url ? '' : 'disabled'}>이 녹화 삭제</button></div>
-        <p class="sub">녹화는 원본 카메라 방향이며 미리보기와 좌우가 다를 수 있습니다.</p>
-      </div>
-      <div class="panel"><h2>직접 남기는 복기</h2>
-        <label for="reflection">전달한 핵심, 다시 볼 부분, 다음에 바꾸고 싶은 점</label>
-        <textarea id="reflection" rows="6" maxlength="10000" placeholder="영상과 측정값을 보고 내 생각을 적어 보세요.">${esc(session.reflection)}</textarea>
-        <p class="sub" id="note-state" role="status">메모는 현재 탭에서 유지됩니다. 필요한 내용은 다운로드하세요.</p>
-        <button class="btn" id="download-notes">측정값·메모 다운로드</button>
-      </div>
+      <section class="review-main">${video}${timeline}</section>
+      <aside class="review-side">${summary}${memo}${intervals}</aside>
     </div>
-    <div class="panel chart-panel"><h2>시간에 따른 관찰값</h2>
-      <p class="sub">그래프 클릭 또는 아래 시간 선택으로 해당 위치를 확인하세요. 정면 띠: 파랑 = 참고 범위 안, 회색 = 범위 밖, 어두운색 = 검출 없음. 속도 음영은 설정한 참고 범위입니다.</p>
-      <div class="chart" id="report-chart" role="img" aria-label="정면 범위·속도·음량·음높이 시간 그래프. 아래 시간 선택으로 값을 읽을 수 있습니다."></div>
-      <label for="review-time">확인할 위치 <output id="review-clock">00:00</output></label>
-      <input id="review-time" type="range" min="0" max="${r.durationSec}" step="0.1" value="0">
-      <p id="sample-description" class="sample-description"></p>
-      <div class="marker-form"><label for="marker-note">이 위치에 메모</label><input id="marker-note" type="text" maxlength="500" placeholder="직접 발견한 부분을 적어 주세요."><button class="btn" id="add-marker">메모 추가</button></div>
-      <ul id="markers" class="markers"></ul>
-    </div>
-    <div class="panel observations"><h2>참고 범위와 다른 구간</h2>
-      <p class="sub">1초 이상 이어진 구간입니다. 개선할 부분인지는 재생한 뒤 직접 판단하세요. 얼굴 미검출은 따로 표시합니다.</p>
-      <div class="intervals">${r.intervals.length ? r.intervals.map(i => `<button class="btn" data-seek="${i.start}">${formatClock(i.start)} · ${esc(i.label)} · ${i.dur.toFixed(1)}초</button>`).join('') : '<p>표시할 연속 구간이 없습니다. 측정 부족일 수도 있으며 수행 평가를 의미하지 않습니다.</p>'}</div>
-    </div>
-    <div class="panel comparison"><h2>같은 질문의 이전 답변과 비교</h2>
-      <label for="previous-answer">현재 탭에서 연습한 답변 선택</label><select id="previous-answer"><option value="">비교할 답변 선택</option></select>
-      <div id="comparison-content"><p class="sub">같은 질문으로 다시 연습하면 이전 답변을 함께 확인할 수 있습니다. 데모는 비교 기록에 포함하지 않습니다.</p></div>
-    </div>
-    <p class="review-help">실제 답변은 최근 5개까지 현재 탭에만 보관합니다. 새로고침·탭 닫기 시 영상과 메모가 사라집니다.</p>
-    <div class="report-actions"><button class="btn primary" id="retry">같은 질문 다시 연습</button><button class="btn" id="setup">질문·설정 변경</button><button class="btn" id="print">복기 인쇄 / PDF</button><button class="btn" id="clear-history">보관한 답변·메모 모두 삭제</button></div>
+    ${comparison}
+    <p class="hint">실제 답변은 최근 5개까지 현재 탭에만 보관해요. 새로고침하거나 탭을 닫으면 영상과 메모가 사라져요.</p>
+    <div class="report-actions">${button({ label: '질문·설정 변경', id: 'setup', variant: 'outline' })}
+      ${button({ label: '복기 인쇄 / PDF', id: 'print', variant: 'outline' })}
+      ${button({ label: '보관한 답변·메모 모두 삭제', id: 'clear-history', variant: 'destructive' })}</div>
   </div>`;
+}
+
+/** 상단 바: 비교로 이동 · 같은 질문 다시 답변 */
+function topActions() {
+  return `${button({ label: '이전 답변과 비교', id: 'goto-compare', variant: 'outline' })}${button({ label: '같은 질문 다시 답변', id: 'retry' })}`;
 }
 
 function download(blob, filename) {
@@ -99,8 +119,8 @@ function markers() {
   $('markers').replaceChildren();
   current.markers.forEach((m,index) => {
     const li = document.createElement('li');
-    const jump = document.createElement('button'); jump.className = 'btn'; jump.textContent = `${formatClock(m.t)} · ${m.text}`; jump.onclick = () => seek(m.t);
-    const del = document.createElement('button'); del.className = 'btn'; del.textContent = '삭제'; del.setAttribute('aria-label', `${formatClock(m.t)} 메모 삭제`);
+    const jump = document.createElement('button'); jump.type = 'button'; jump.className = 'btn'; jump.dataset.variant = 'ghost'; jump.dataset.size = 'sm'; jump.textContent = `${formatClock(m.t)} · ${m.text}`; jump.onclick = () => seek(m.t);
+    const del = document.createElement('button'); del.type = 'button'; del.className = 'btn'; del.dataset.variant = 'outline'; del.dataset.size = 'sm'; del.textContent = '삭제'; del.setAttribute('aria-label', `${formatClock(m.t)} 메모 삭제`);
     del.onclick = () => { current.markers.splice(index,1); markers(); };
     li.append(jump,del); $('markers').append(li);
   });
@@ -125,6 +145,10 @@ export function enter(appRef, payload = {}) {
   } else current = app.lastReview;
   if (!current) { app.go('setup'); return; }
   root.innerHTML = template(current);
+  bindTabs(root);
+  const top = document.getElementById('topbar-right');
+  top.innerHTML = topActions();
+  top.querySelector('#goto-compare').onclick = () => { $('comparison').scrollIntoView({ behavior: 'smooth', block: 'start' }); $('previous-answer').focus({ preventScroll: true }); };
   $('reflection').addEventListener('input', e => { current.reflection = e.target.value; $('note-state').textContent = '현재 탭에 메모를 반영했습니다.'; });
   $('add-marker').onclick = () => {
     const input = $('marker-note');
@@ -145,7 +169,7 @@ export function enter(appRef, payload = {}) {
     const { id,date,settings,samples,review,reflection,markers,demo } = current;
     download(new Blob([JSON.stringify({id,date,settings,samples,review,reflection,markers,demo},null,2)], {type:'application/json'}), `review-${id}.json`);
   };
-  $('retry').onclick = () => { app.settings = structuredClone(current.settings); app.go('setup'); };
+  top.querySelector('#retry').onclick = () => { app.settings = structuredClone(current.settings); app.go('setup'); };
   $('setup').onclick = () => app.go('setup');
   $('print').onclick = () => window.print();
   $('clear-history').onclick = () => {
