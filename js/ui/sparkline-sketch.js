@@ -1,5 +1,5 @@
 // p5 인스턴스: 최근 10초 음높이 흐름(반음 단위). 튀는 값은 빼고, 침묵 구간은 끊어서 그립니다.
-import { STATUS_COLORS, THEME } from '../config.js';
+import { SERIES_COLORS, THEME } from '../config.js';
 import { cleanPitch } from '../analysis/audio-math.js';
 
 const RANGE_ST = 8; // 기준 음높이에서 위아래 ±8반음까지 표시
@@ -31,7 +31,7 @@ export function createSparkline(parentEl, getSeries) {
         return;
       }
       const ref = refHz ?? pts.map((x) => x.hz).sort((a, b) => a - b)[Math.floor(pts.length / 2)];
-      p.noFill(); p.stroke(STATUS_COLORS[status] ?? STATUS_COLORS.idle); p.strokeWeight(2.2);
+      p.noFill(); p.stroke(SERIES_COLORS.pitch); p.strokeWeight(2.2); // 중립: 상태와 무관하게 같은 색
       let prev = null;
       for (const pt of pts) {
         const x = p.map(pt.t, now - windowSec, now, 0, p.width);
