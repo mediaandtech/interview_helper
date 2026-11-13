@@ -8,6 +8,7 @@ import { createSyllableEstimator } from '../analysis/syllables.js';
 import { createRateTracker } from '../analysis/rate.js';
 import { isFrontal, createGazeTracker } from '../analysis/gaze-logic.js';
 import { createRecorder } from '../recorder.js';
+import { countFillers } from '../analysis/fillers.js';
 import { startSpeech } from '../sensors/speech.js';
 import { createWebcamSketch } from './webcam-sketch.js';
 import { createSparkline } from './sparkline-sketch.js';
@@ -76,6 +77,8 @@ function newState(settings) {
     speakHist: [],
     pitchStatus: 'idle',
     speech: null,
+    fillers: 0,
+    heardText: false,
     sketches: [],
   };
 }
@@ -203,7 +206,11 @@ function loop(now) {
       s.lastTick = now;
       $('countdown').remove();
       s.speech = app.sensors.audio
-        ? startSpeech({ onSyllables: (n, tSec) => s.rate.addRecognized(n, tSec), now: () => t() })
+        ? startSpeech({
+            onSyllables: (n, tSec) => s.rate.addRecognized(n, tSec),
+            onText: (text) => { s.heardText = true; s.fillers += countFillers(text); },
+            now: () => t(),
+          })
         : null;
     }
   } else if (now - s.lastTick >= TICK_MS) {
@@ -220,7 +227,7 @@ function finish() {
   const total = live ? t() : 0;
   const recognizedAvgRate = s.rate.recognizedAverage(total);
   const samples = s.recorder.samples();
-  app.go('report', { samples, recognizedAvgRate });
+  app.go('report', { samples, recognizedAvgRate, fillerCount: s.heardText ? s.fillers : null });
 }
 
 export function enter(appRef) {

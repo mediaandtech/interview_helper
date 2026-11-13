@@ -226,3 +226,12 @@ main { flex: 1; min-height: 0; position: relative; }
   .print-chart { width: 100%; display: block; }
   .chart-panel .sub-inline { display: none; }
 }
+
+/* 지난 기록 비교 */
+.history { border-left-color: var(--border); }
+.history p { margin: 6px 0 8px; }
+.history .up { color: var(--ok); }
+.history .down { color: var(--bad); }
+.history table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.history th { text-align: left; color: var(--muted); font-weight: 600; font-size: 11px; padding: 4px 8px; border-bottom: 1px solid var(--border); }
+.history td { padding: 5px 8px; border-bottom: 1px solid var(--border); }

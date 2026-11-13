@@ -7,6 +7,27 @@ import { createReportChart } from './report-sketch.js';
 
 let app, root, chart, printHandlers;
 
+const HISTORY_KEY = 'pcoach.history';
+const HISTORY_MAX = 20;
+
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) ?? []; } catch { return []; }
+}
+function saveHistory(list) {
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(-HISTORY_MAX))); } catch { /* 저장 불가 무시 */ }
+}
+
+function historyTable(prev, r) {
+  if (!prev.length) return '';
+  const rows = [...prev.slice(-3)].reverse().map((h) => `<tr><td>${h.date}</td><td>${PRESETS[h.preset]?.label ?? ''}</td>
+    <td>${h.score}</td><td>${h.gazePct ?? '—'}%</td><td>${h.avgRate ?? '—'}</td></tr>`).join('');
+  const last = prev[prev.length - 1];
+  const diff = r.score - last.score;
+  const trend = diff > 0 ? `지난번보다 <b class="up">${diff}점</b> 올랐어요.` : diff < 0 ? `지난번보다 <b class="down">${-diff}점</b> 낮아요.` : '지난번과 점수가 같아요.';
+  return `<div class="panel history"><div class="title">지난 기록과 비교</div><p>${trend}</p>
+    <table><thead><tr><th>날짜</th><th>유형</th><th>점수</th><th>정면 응시</th><th>평균 속도</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
 const scoreStatus = (v) => (v == null ? 'idle' : v >= 80 ? 'ok' : v >= 60 ? 'warn' : 'bad');
 
 function statCells(r, settings) {
@@ -26,7 +47,7 @@ function statCells(r, settings) {
   ].join('');
 }
 
-function template(r, settings) {
+function template(r, settings, prev = []) {
   const date = new Date().toLocaleDateString('ko-KR');
   const meta = `${PRESETS[settings.presetKey]?.label ?? ''} · 목표 ${formatClock(settings.durationSec)} / 실제 ${formatClock(r.durationSec)} · ${date}`;
   if (r.tooShort) {
@@ -48,6 +69,7 @@ function template(r, settings) {
       <div class="title">시간 흐름 <span class="sub-inline">· 그래프 위에 마우스를 올리면 그 순간의 값과 설명이 보여요</span></div>
       <div class="chart" id="report-chart"></div>
     </div>
+    ${historyTable(prev, r)}
     <div class="panel tips">
       <div class="title">다음 연습에서 고칠 것</div>
       <ol>${tips}</ol>
@@ -65,9 +87,19 @@ export function enter(appRef, payload = {}) {
   root = document.getElementById('screen-report');
   const samples = payload.samples ?? app.lastSamples ?? [];
   app.lastSamples = samples;
-  const r = buildReport(samples, app.settings, { recognizedAvgRate: payload.recognizedAvgRate });
+  const r = buildReport(samples, app.settings, { recognizedAvgRate: payload.recognizedAvgRate, fillerCount: payload.fillerCount });
   app.lastReport = r;
-  root.innerHTML = template(r, app.settings);
+  let prev = [];
+  if (!r.tooShort) {
+    const history = loadHistory();
+    // 연습을 마치고 들어온 경우(payload.samples 있음)에만 기록을 저장
+    prev = history;
+    if (payload.samples) {
+      saveHistory([...history, { date: new Date().toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        preset: app.settings.presetKey, score: r.score, gazePct: r.metrics.gaze?.pct ?? null, avgRate: r.metrics.rate?.avg ?? null }]);
+    }
+  }
+  root.innerHTML = template(r, app.settings, prev);
 
   root.querySelectorAll('[data-act]').forEach((b) => b.addEventListener('click', () => {
     const act = b.dataset.act;

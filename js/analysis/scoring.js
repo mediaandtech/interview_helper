@@ -135,6 +135,12 @@ export function buildReport(samples, settings, extras = {}) {
       text: `목표보다 ${formatStamp(Math.abs(diffSec))} ${diffSec > 0 ? '길게' : '짧게'} 발표했어요.` });
   }
 
+  const fillerCount = extras.fillerCount ?? null;
+  if (fillerCount >= 5) {
+    cands.push({ key: 'filler', t: null, sev: fillerCount,
+      text: `'음', '어'를 ${fillerCount}번 사용했어요. 잠깐 멈추는 것으로 바꿔 보세요.` });
+  }
+
   cands.sort((a, b) => b.sev - a.sev);
   const top = cands.slice(0, 3);
   // 시선이 주인공: 긴 시선 이탈이 있으면 반드시 하나는 포함
@@ -156,5 +162,5 @@ export function buildReport(samples, settings, extras = {}) {
     ? `${BEST[best]}. 전반적으로 훌륭한 발표였어요.`
     : `${BEST[best]}. ${WORST[worst]} 가장 아쉬워요.`;
 
-  return { tooShort: false, durationSec, score, metrics, headline, tips, gazeEvents };
+  return { tooShort: false, durationSec, score, metrics, headline, tips, gazeEvents, fillerCount };
 }
