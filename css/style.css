@@ -30,6 +30,7 @@ body {
   overflow-x: hidden;
 }
 button { font: inherit; }
+[hidden] { display: none !important; } /* display:flex 등이 hidden 속성을 덮어쓰지 않게 */
 
 /* ===== 상단 바 ===== */
 .topbar {
@@ -301,3 +302,32 @@ main { flex: 1; min-height: 0; position: relative; }
 .issues .tag { display: inline-block; font-size: 11px; padding: 0 6px; margin-right: 6px; border-radius: 3px; background: var(--panel-2); color: var(--muted); }
 .issues tr[data-metric="gaze"] .tag { color: var(--bad); }
 @media print { .issues { max-height: none; overflow: visible; } }
+
+/* ===== 시선 인식 테스트 ===== */
+.gtest { height: 100%; padding: 12px; display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 12px; }
+.gt-side { display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow: auto; }
+.gt-step { display: flex; flex-direction: column; gap: 8px; border-left-color: var(--accent); }
+.gt-step .head { display: flex; justify-content: space-between; }
+.gt-step .num { color: var(--warn); font-size: 13px; font-weight: 600; }
+.gt-title { font-size: clamp(24px, 4.4vh, 36px); font-weight: 700; line-height: 1.15; }
+.gt-say { color: var(--text); font-size: 15px; }
+.gt-now { font-size: 14px; color: var(--muted); }
+.gt-now b { color: var(--text); font-size: 18px; }
+.gt-now span { color: var(--ok); font-weight: 700; margin-left: 6px; }
+.gt-live { display: flex; flex-direction: column; gap: 7px; }
+.gt-bar { display: grid; grid-template-columns: 74px 1fr 46px; align-items: center; gap: 8px; font-size: 12px; }
+.gt-bl { color: var(--muted); }
+.gt-val { text-align: right; font-variant-numeric: tabular-nums; }
+.gt-track { position: relative; height: 10px; border-radius: 5px; background: var(--bg); }
+.gt-zone { position: absolute; top: 0; bottom: 0; background: rgba(115, 191, 105, .25); border-radius: 5px; }
+.gt-mark { position: absolute; top: -4px; width: 6px; height: 18px; margin-left: -3px; border-radius: 3px; background: var(--text); }
+.gt-mark[data-status="ok"] { background: var(--ok); }
+.gt-mark[data-status="bad"] { background: var(--bad); }
+.gt-result { border-left-color: var(--border); }
+.gt-result table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 6px; }
+.gt-result th { text-align: left; color: var(--muted); font-size: 11px; font-weight: 600; padding: 3px 6px; border-bottom: 1px solid var(--border); }
+.gt-result td { padding: 4px 6px; border-bottom: 1px solid var(--border); }
+.gt-result tr[data-pass="true"] td:first-child { color: var(--ok); font-weight: 700; }
+.gt-result tr[data-pass="false"] td:first-child { color: var(--bad); font-weight: 700; }
+.gt-tips { margin: 6px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.gt-actions { display: flex; gap: 8px; align-items: center; margin-top: 10px; }

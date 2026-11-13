@@ -21,6 +21,8 @@ export const GAZE = {
   recoverSec: 0.5,     // 정면 복귀 후 초록으로 돌아오기까지
   ratioWindowSec: 30,  // "정면 87%" 계산 구간
   warnMargin: 0.15,    // 목표보다 이만큼 낮을 때까지 주황
+  flipYaw: false,      // 시선 테스트에서 좌우가 반대로 나오면 true
+  flipPitch: false,    // 시선 테스트에서 위아래가 반대로 나오면 true
 };
 
 /** 목소리 크기 (보정 때 잰 기준 음량 대비 dB) */

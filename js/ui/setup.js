@@ -73,6 +73,7 @@ function template() {
       </div>
       <button class="btn primary start" id="start" disabled>연습 시작</button>
       <button class="btn demo-start" id="demo-start" title="카메라·마이크 없이 가상 데이터로 모든 상태를 보여 줍니다">데모 데이터로 체험하기</button>
+      <button class="btn demo-start" id="gaze-test" title="고개·눈 방향이 맞게 잡히는지 단계별로 점검합니다">시선 인식 테스트</button>
     </div>
   </div>`;
 }
@@ -230,6 +231,7 @@ export function enter(appRef) {
   root.querySelectorAll('.chip').forEach((c) => c.addEventListener('click', () => applyPreset(c.dataset.preset)));
   root.querySelector('#calib-run').addEventListener('click', runCalibration);
   root.querySelector('#demo-start').addEventListener('click', startDemo);
+  root.querySelector('#gaze-test').addEventListener('click', () => app.go('gazetest'));
   if (app.demo && !app.demoAutoStarted) { app.demoAutoStarted = true; startDemo(); return; } // ?demo=1
   root.querySelector('#start').addEventListener('click', () => {
     const c = state.calib;

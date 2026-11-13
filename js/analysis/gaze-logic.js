@@ -5,9 +5,11 @@ const DEG = 180 / Math.PI;
 const z = (v) => v + 0; // -0 → 0
 
 /** MediaPipe 얼굴 변환 행렬(열 우선 4x4) → 고개 각도(도) */
-export function headAnglesFromMatrix(d) {
+export function headAnglesFromMatrix(d, flip = { yaw: GAZE.flipYaw, pitch: GAZE.flipPitch }) {
   const s = Math.max(-1, Math.min(1, -d[2]));
-  return { yaw: z(Math.asin(s) * DEG), pitch: z(Math.atan2(d[6], d[10]) * DEG) };
+  const yaw = Math.asin(s) * DEG * (flip.yaw ? -1 : 1);
+  const pitch = Math.atan2(d[6], d[10]) * DEG * (flip.pitch ? -1 : 1);
+  return { yaw: z(yaw), pitch: z(pitch) };
 }
 
 /** 눈 방향 blendshape → { down, up, left, right } (양쪽 눈 평균) */

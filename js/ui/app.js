@@ -1,6 +1,7 @@
 import * as setup from './setup.js';
 import * as practice from './practice.js';
 import * as report from './report.js';
+import * as gazetest from './gazetest.js';
 import { THEME, STATUS_COLORS } from '../config.js';
 
 // 디자인 토큰을 CSS 변수로 (색은 config.js 한 곳에서 관리)
@@ -12,7 +13,7 @@ const CSS_VARS = {
 };
 for (const [k, v] of Object.entries(CSS_VARS)) document.documentElement.style.setProperty(k, v);
 
-const screens = { setup, practice, report };
+const screens = { setup, practice, report, gazetest };
 const ORDER = ['setup', 'practice', 'report'];
 
 /** 화면 사이에 공유하는 상태 */
@@ -50,4 +51,4 @@ export function debugLine(obj) {
 }
 
 window.app = app; // 콘솔 디버깅용
-app.go('setup');
+app.go(new URLSearchParams(location.search).has('gazetest') ? 'gazetest' : 'setup');
