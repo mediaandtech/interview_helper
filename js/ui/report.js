@@ -200,8 +200,13 @@ export function enter(appRef, payload = {}) {
     const canvas = $('report-chart')?.querySelector('canvas');
     if (canvas && !root.querySelector('.print-chart')) { const img = new Image(); img.src=canvas.toDataURL(); img.className='print-chart'; canvas.after(img); }
     const note = document.createElement('p'); note.className='print-note'; note.textContent=current.reflection; $('reflection').after(note);
+    // 숨겨진 메모 탭도 인쇄되게: Basecoat의 [hidden] 규칙은 @layer 안의 !important라 CSS로는 못 덮음
+    root.querySelectorAll('[role=tabpanel][hidden]').forEach((el) => { el.hidden = false; el.dataset.printShown = '1'; });
   };
-  const after = () => root?.querySelectorAll('.print-chart,.print-note').forEach(el=>el.remove());
+  const after = () => {
+    root?.querySelectorAll('.print-chart,.print-note').forEach(el=>el.remove());
+    root?.querySelectorAll('[data-print-shown]').forEach((el) => { el.hidden = true; delete el.dataset.printShown; });
+  };
   window.addEventListener('beforeprint',before); window.addEventListener('afterprint',after); printHandlers={before,after};
 }
 

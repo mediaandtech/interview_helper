@@ -14,7 +14,7 @@ npm start
 npm test
 ```
 
-Node 20 이상에서 계산·녹화 수명주기 테스트를 실행합니다. 런타임 패키지 설치는 필요하지 않습니다. 브라우저 검증 스크립트는 `scripts/browser-review-smoke.cjs`이며 별도로 설치된 Playwright 경로를 `PLAYWRIGHT_MODULE`로 지정해 실행합니다.
+Node 20 이상에서 계산·녹화 수명주기 테스트를 실행합니다. 복기 화면 인쇄(숨겨진 메모 탭 포함, 흰 종이에 읽히는 글자)는 `scripts/print-check.cjs`로 확인합니다(스모크 스크립트와 같은 `PLAYWRIGHT_MODULE`·`REVIEW_URL` 사용). 런타임 패키지 설치는 필요하지 않습니다. 브라우저 검증 스크립트는 `scripts/browser-review-smoke.cjs`이며 별도로 설치된 Playwright 경로를 `PLAYWRIGHT_MODULE`로 지정해 실행합니다.
 
 ## 사용 흐름
 
