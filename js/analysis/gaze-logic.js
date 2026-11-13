@@ -77,6 +77,7 @@ export function createGazeTracker(target) {
   let run = null;           // 진행 중인 이탈 { start, dir, firstIdx }
   let backAt = -Infinity;
   let lastAwayStatus = 'ok';
+  let totOk = 0, totN = 0;  // 세션 전체 누적
 
   const awayStatus = (sec) => (sec >= GAZE.badSec ? 'bad' : sec >= GAZE.warnSec ? 'warn' : 'ok');
 
@@ -84,6 +85,7 @@ export function createGazeTracker(target) {
     const dur = tSec - run.start;
     if (dur < GAZE.forgiveSec) {
       for (const h of hist) if (h.t >= run.start) h.ok = true;
+      totOk += run.count;
     }
     if (dur >= GAZE.badSec) events.push({ start: run.start, dur, dir: run.dir });
     lastAwayStatus = awayStatus(dur);
@@ -96,18 +98,23 @@ export function createGazeTracker(target) {
     return hist.filter((h) => h.ok).length / hist.length;
   }
 
+  const cumulative = () => (totN ? totOk / totN : null);
+
   return {
     update(frontal, dir, tSec) {
       if (frontal === null) {
         if (run) closeRun(tSec);
-        return { status: 'idle', awaySec: 0, ratio: null, dir: 'none' };
+        return { status: 'idle', awaySec: 0, ratio: null, cumulative: cumulative(), dir: 'none' };
       }
+      totN++;
+      if (frontal) totOk++;
       hist.push({ t: tSec, ok: frontal });
       while (hist.length && hist[0].t < tSec - GAZE.ratioWindowSec) hist.shift();
 
       let status, awaySec = 0;
       if (!frontal) {
-        if (!run) run = { start: tSec, dir };
+        if (!run) run = { start: tSec, dir, count: 0 };
+        run.count++;
         awaySec = tSec - run.start;
         status = awayStatus(awaySec);
         if (status === 'ok' && tSec - backAt < GAZE.recoverSec) status = lastAwayStatus;
@@ -115,7 +122,7 @@ export function createGazeTracker(target) {
         if (run) closeRun(tSec);
         status = tSec - backAt < GAZE.recoverSec ? lastAwayStatus : 'ok';
       }
-      return { status, awaySec, ratio: ratio(), dir: frontal ? 'front' : dir };
+      return { status, awaySec, ratio: ratio(), cumulative: cumulative(), dir: frontal ? 'front' : dir };
     },
     flush(tSec) { if (run) closeRun(tSec); },
     events() { return events.map((e) => ({ ...e })); },

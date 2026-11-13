@@ -84,3 +84,13 @@ test('gazeGrid maps to a 3x3 cell', () => {
   assert.deepEqual(gazeGrid({ yaw: 0, pitch: 0, eye: { ...eye0, up: 0.9 } }, calib), { col: 0, row: -1 });
   assert.equal(gazeGrid(null, calib), null);
 });
+
+test('tracker: cumulative ratio covers the whole session and forgives short glances', () => {
+  const g = createGazeTracker(0.8); let o;
+  for (let i = 0; i < 1000; i++) {           // 100초
+    const t = i / 10;
+    const away = (t >= 10 && t < 11) || (t >= 50 && t < 60);   // 1초(봐줌) + 10초(이탈)
+    o = g.update(!away, away ? 'down' : 'front', t);
+  }
+  assert.ok(Math.abs(o.cumulative - 0.9) < 0.01, String(o.cumulative));
+});
