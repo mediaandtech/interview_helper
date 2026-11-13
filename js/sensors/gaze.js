@@ -21,7 +21,7 @@ async function createLandmarker(delegate) {
  * @returns {Promise<{ video: HTMLVideoElement,
  *   detect(nowMs:number): { face: {yaw:number,pitch:number,eye:object}|null, landmarks: {x:number,y:number}[]|null },
  *   stop(): void }>}
- * 실패하면 'denied' | 'nodevice' | 'model' 로 reject
+ * 실패하면 'denied' | 'nodevice' | 'busy' | 'error' | 'model' 로 reject
  */
 export async function initGaze() {
   let stream;
@@ -31,7 +31,7 @@ export async function initGaze() {
     });
   } catch (err) {
     const r = mediaErrorReason(err);
-    throw r === 'error' ? 'nodevice' : r;
+    throw r;
   }
 
   const video = document.createElement('video');

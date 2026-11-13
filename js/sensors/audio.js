@@ -6,12 +6,13 @@ export function mediaErrorReason(err) {
   const n = err?.name;
   if (n === 'NotAllowedError' || n === 'SecurityError') return 'denied';
   if (n === 'NotFoundError' || n === 'OverconstrainedError') return 'nodevice';
+  if (n === 'NotReadableError' || n === 'AbortError') return 'busy';
   return 'error';
 }
 
 /**
  * @returns {Promise<{ read(baseDb:number|null): {db:number, speaking:boolean, hz:number|null}, stop():void, stream: MediaStream }>}
- * 실패하면 'denied' | 'nodevice' | 'error' 로 reject
+ * 실패하면 'denied' | 'nodevice' | 'busy' | 'error' 로 reject
  */
 export async function startAudio() {
   let stream;

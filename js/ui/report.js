@@ -2,7 +2,7 @@
 import { PRESETS } from '../config.js';
 import { formatClock, formatStamp } from '../util/time.js';
 import { buildReport } from '../analysis/scoring.js';
-import { classifyRate } from '../analysis/classify.js';
+import { classifyRate, classifyGazeRatio } from '../analysis/classify.js';
 import { createReportChart } from './report-sketch.js';
 
 let app, root, chart, printHandlers;
@@ -35,7 +35,7 @@ function statCells(r, settings) {
   const cell = (title, value, status, sub = '') =>
     `<div class="panel stat" data-status="${status}"><div class="title">${title}</div><div class="value">${value}</div><div class="sub">${sub}</div></div>`;
   return [
-    m.gaze ? cell('정면 응시', `${m.gaze.pct}%`, scoreStatus(m.gaze.score), `목표 ${Math.round(settings.gazeTarget * 100)}%`)
+    m.gaze ? cell('정면 응시', `${m.gaze.pct}%`, classifyGazeRatio(m.gaze.pct / 100, settings.gazeTarget), `목표 ${Math.round(settings.gazeTarget * 100)}%`)
       : cell('정면 응시', '—', 'idle', '측정 안 됨'),
     m.rate ? cell('평균 속도', m.rate.avg, classifyRate(m.rate.avg, settings), `음절/분 · 목표 ${settings.rateMin}~${settings.rateMax}`)
       : cell('평균 속도', '—', 'idle', '측정 안 됨'),
@@ -47,11 +47,10 @@ function statCells(r, settings) {
   ].join('');
 }
 
-const ISSUE_METRIC = { gaze: '시선', volume: '크기', rate: '속도' };
 
 function issuesTable(issues) {
   if (!issues.length) return `<div class="panel issues"><div class="title">이탈 구간</div><p class="sub">기준을 벗어난 구간이 없어요.</p></div>`;
-  const rows = issues.map((i) => `<tr data-metric="${i.metric}"><td>${formatStamp(i.start)}</td><td><span class="tag">${ISSUE_METRIC[i.metric]}</span>${i.label}</td><td>${Math.round(i.dur)}초</td></tr>`).join('');
+  const rows = issues.map((i) => `<tr data-metric="${i.metric}"><td>${formatStamp(i.start)}</td><td>${i.label}</td><td>${Math.round(i.dur)}초</td></tr>`).join('');
   return `<div class="panel issues"><div class="title">이탈 구간 <span class="sub-inline">· 시작 시각과 지속 시간</span></div>
     <table><thead><tr><th>시작</th><th>내용</th><th>지속</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }

@@ -49,7 +49,7 @@ test('quiet after 3:50 becomes top volume tip', () => {
   const tip = r.tips.find((x) => x.t === 230);
   assert.ok(tip, JSON.stringify(r.tips));
   assert.ok(tip.text.includes('3:50') && tip.text.includes('작아졌어요'));
-  assert.equal(r.metrics.time.text, '+0:24');
+  assert.equal(r.metrics.time.text, '+00:24');
   assert.ok(r.headline.endsWith('가장 아쉬워요.'), r.headline);
 });
 

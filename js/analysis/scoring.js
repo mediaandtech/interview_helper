@@ -1,6 +1,6 @@
 // 기록된 샘플 → 종합 점수, 지표 요약, 한 줄 결론, 피드백 3개
 import { GAZE, PITCH, REPORT, SCORE } from '../config.js';
-import { formatStamp, formatOver } from '../util/time.js';
+import { formatStamp, formatOverClock } from '../util/time.js';
 import { createGazeTracker } from './gaze-logic.js';
 import { semitoneStd } from './audio-math.js';
 import { classifyVolume, classifyRate, classifyPitchVar } from './classify.js';
@@ -93,7 +93,7 @@ export function buildReport(samples, settings, extras = {}) {
 
   const diffSec = durationSec - settings.durationSec;
   const rel = Math.abs(diffSec) / settings.durationSec;
-  const time = { diffSec, text: formatOver(diffSec), score: rel <= 0.1 ? 100 : clamp01(1 - (rel - 0.1) / 0.4) * 100 };
+  const time = { diffSec, text: formatOverClock(diffSec), score: rel <= 0.1 ? 100 : clamp01(1 - (rel - 0.1) / 0.4) * 100 };
 
   const metrics = { gaze, rate, volume, pitch, time };
   const present = ORDER.filter((k) => metrics[k]);

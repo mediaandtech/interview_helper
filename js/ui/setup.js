@@ -11,6 +11,7 @@ const READ_TEXT = '안녕하세요, 지금부터 발표를 시작하겠습니다
 const MSG = {
   denied: '주소창 왼쪽 자물쇠 아이콘에서 카메라/마이크를 허용한 뒤 다시 시도해 주세요.',
   nodevice: '장치를 찾을 수 없어요. 연결 상태를 확인해 주세요.',
+  busy: '다른 앱(Zoom, FaceTime 등)이나 다른 탭이 사용 중이에요. 그 앱을 닫고 다시 측정해 주세요.',
   model: '얼굴 인식 모델을 불러오지 못했어요. 페이지를 새로고침해 주세요.',
   error: '장치를 여는 중 문제가 생겼어요. 다시 시도해 주세요.',
   noFace: '얼굴이 화면 가운데 오도록 앉아 주세요.',
@@ -176,6 +177,11 @@ async function runCalibration() {
     }
   } else {
     setStep('face', 'fail', MSG[gazeErr] ?? MSG.error);
+    // 카메라가 없어도 주변 소음은 재야 목소리 기준이 소음에 끌려가지 않음
+    if (audio) {
+      btn.textContent = '주변 소음 측정 중… 잠시 조용히';
+      await sleepFrames(CALIB.faceSec * 1000, (now, f) => { setProgress(f * 0.33); noise.push(audio.read(null).db); });
+    }
   }
 
   // 2단계: 기준 음량·음높이
