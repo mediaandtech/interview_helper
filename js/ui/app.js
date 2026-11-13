@@ -2,6 +2,7 @@ import * as setup from './setup.js';
 import * as practice from './practice.js';
 import * as report from './report.js';
 import * as gazetest from './gazetest.js';
+import { topBar } from './components.js';
 // 색·간격 등 디자인 토큰은 css/tokens.css 가 원본입니다(p5 그림용 값은 js/config.js, 테스트로 일치 확인).
 
 const screens = { setup, practice, report, gazetest };
@@ -19,13 +20,7 @@ export const app = {
   go(name, payload) {
     if (this.current) screens[this.current].leave?.(name);
     document.querySelectorAll('.screen').forEach((el) => el.classList.toggle('active', el.id === `screen-${name}`));
-    const idx = ORDER.indexOf(name);
-    document.querySelectorAll('#flow span').forEach((el) => {
-      const i = ORDER.indexOf(el.dataset.step);
-      el.classList.toggle('cur', i === idx);
-      el.classList.toggle('done', i < idx);
-    });
-    document.getElementById('topbar-right').replaceChildren();
+    document.getElementById('app-top').innerHTML = topBar({ step: ORDER.includes(name) ? name : null });
     this.current = name;
     screens[name].enter(this, payload);
   },

@@ -6,6 +6,7 @@ import { initGaze } from '../sensors/gaze.js';
 import { createWebcamSketch } from './webcam-sketch.js';
 import { createDemoAudio, createDemoGaze, DEMO_CALIB } from '../sensors/demo.js';
 import { debugLine } from './app.js';
+import { button, card, field, switchField, segmented, checklist, bindTabs } from './components.js';
 
 const READ_TEXT = '안녕하세요, 지금부터 발표를 시작하겠습니다.';
 const MSG = {
@@ -35,63 +36,60 @@ const sleepFrames = (ms, onFrame) => new Promise((resolve) => {
 });
 
 function template() {
-  const chips = Object.entries(PRESETS)
-    .map(([k, p]) => `<button class="chip" data-preset="${k}">${p.label}</button>`).join('');
-  return `
-  <div class="setup">
-    <div class="setup-col">
-      <div class="panel card">
-        <div class="title">1. 연습할 질문</div>
-        <label for="question">질문 또는 답변 주제</label>
-        <textarea id="question" rows="2" maxlength="1000" placeholder="예: 지원 동기를 말씀해 주세요."></textarea>
-        <p class="sub">답변을 기록하고 직접 돌아보는 도구입니다. 점수나 자동 평가는 제공하지 않습니다.</p>
-        <div class="title">참고 범위 프리셋</div>
-        <div class="chips">${chips}</div>
-        <div class="sub">초기 참고값입니다. 면접의 정답 기준이 아니며 아래에서 바꿀 수 있습니다.</div>
+  const presets = segmented({ name: 'preset', value: state.presetKey,
+    options: Object.entries(PRESETS).map(([value, p]) => ({ value, label: p.label })) });
+  const timeCtl = `<div class="inline"><input class="input num" id="dur-m" type="number" min="1" max="30" aria-label="분"> 분
+    <input class="input num" id="dur-s" type="number" min="0" max="59" step="5" aria-label="초"> 초</div>`;
+  const rateCtl = `<div class="inline"><input class="input num" id="rate-min" type="number" step="10" aria-label="속도 참고 범위 최소"> ~
+    <input class="input num" id="rate-max" type="number" step="10" aria-label="속도 참고 범위 최대"> 음절/분</div>`;
+  const question = card({
+    title: '연습할 질문',
+    description: '점수나 자동 평가 없이, 답변을 기록하고 직접 돌아봐요.',
+    html: `<div class="stack">
+      ${field({ label: '질문 또는 답변 주제', forId: 'question',
+        controlHtml: '<textarea class="textarea" id="question" rows="2" maxlength="1000" placeholder="예: 지원 동기를 말씀해 주세요."></textarea>' })}
+      ${field({ label: '참고 범위 프리셋', controlHtml: presets, hint: '초기 참고값이에요. 면접의 정답 기준이 아니며 아래에서 바꿀 수 있어요.' })}
+      <div class="row2">
+        ${field({ label: '답변 시간', controlHtml: timeCtl, hint: '시간이 지나도 측정은 계속돼요.' })}
+        ${field({ label: '속도 참고 범위', controlHtml: rateCtl })}
       </div>
-      <div class="panel card">
-        <div class="title">2. 답변 시간</div>
-        <div class="time-input">
-          <input id="dur-m" type="number" min="1" max="30" aria-label="분"><span>분</span>
-          <input id="dur-s" type="number" min="0" max="59" step="5" aria-label="초"><span>초</span>
-        </div>
-        <div class="sub">스스로 정한 시간과 비교합니다. 시간이 지나도 측정은 계속됩니다.</div>
-      </div>
-      <details class="panel card advanced">
-        <summary class="title">고급 설정</summary>
-        <label>속도 참고 범위 (음절/분) <span><input id="rate-min" type="number" step="10"> ~ <input id="rate-max" type="number" step="10"></span></label>
-        <label for="gaze-yaw">정면 참고 범위 · 좌우 (±도)<input id="gaze-yaw" type="number" min="1" max="90"></label>
-        <label for="gaze-pitch">정면 참고 범위 · 위아래 (±도)<input id="gaze-pitch" type="number" min="1" max="90"></label>
-        <p class="sub">보정한 정면 자세를 기준으로 합니다. 눈 방향은 별도의 검출 기준도 함께 사용합니다.</p>
-      </details>
-      <div class="panel card">
-        <label class="check"><input id="record-answer" type="checkbox"> 답변을 녹화·녹음하여 직접 다시 보기</label>
-        <label class="check"><input id="focus-mode" type="checkbox" checked> 답변 중 실시간 지표 숨기기</label>
-        <p class="sub">녹화는 카운트다운 뒤 시작하며 종료 시 장치를 끕니다. 영상·음성·메모는 현재 탭에만 보관됩니다. 최근 실제 답변 5개를 유지하며 탭을 닫거나 새로고침하면 사라집니다. 필요한 자료는 다운로드하세요.</p>
-      </div>
-      <p class="privacy">음성·영상을 외부 서비스에 전송하지 않습니다. 말하기 속도는 마이크 음량 변화로 추정하므로 실제 음절 수와 다를 수 있습니다.</p>
-    </div>
+      <details class="disclosure"><summary>정면 참고 범위</summary><div class="row2">
+        ${field({ label: '좌우 (±도)', forId: 'gaze-yaw', controlHtml: '<input class="input num" id="gaze-yaw" type="number" min="1" max="90">' })}
+        ${field({ label: '위아래 (±도)', forId: 'gaze-pitch', controlHtml: '<input class="input num" id="gaze-pitch" type="number" min="1" max="90">' })}
+      </div><p class="hint">보정한 정면 자세를 기준으로 해요. 눈 방향은 별도의 검출 기준도 함께 써요.</p></details>
+    </div>`,
+  });
+  const recording = card({
+    title: '기록 방식',
+    html: `<div class="stack">
+      ${switchField({ id: 'record-answer', label: '답변을 녹화·녹음해서 다시 보기', hint: '카운트다운 뒤 시작하고, 끝나면 장치를 꺼요.' })}
+      ${switchField({ id: 'focus-mode', label: '답변 중에는 측정값 숨기기', hint: '답변에 집중하고, 복기 때 확인해요.', checked: true })}
+      <p class="hint">영상·음성·메모는 이 탭에만 보관돼요(최근 실제 답변 5개). 새로고침하거나 탭을 닫으면 사라지니 필요한 자료는 다운로드하세요. 외부 서비스로 보내지 않으며, 말하기 속도는 마이크 음량 변화로 추정해 실제 음절 수와 다를 수 있어요.</p>
+    </div>`,
+  });
+  const calib = card({
+    title: '준비 확인',
+    description: '약 10초 · 내 정면 자세와 평소 목소리를 기준으로 잡아요.',
+    className: 'calib',
+    html: `<div class="stack">
+      <div class="preview" id="setup-preview"></div>
+      ${checklist([
+        { key: 'face', title: '카메라를 정면으로 바라보세요' },
+        { key: 'voice', title: '아래 문장을 평소 목소리로 읽어 주세요', html: `<p class="quote">“${READ_TEXT}”</p>` },
+      ])}
+      <div class="progress" role="progressbar" aria-label="준비 확인 진행"><span style="width:0%"></span></div>
+    </div>`,
+    footerHtml: `${button({ label: '준비 확인 시작', id: 'calib-run', variant: 'outline' })}
+      <button type="button" class="btn" data-size="lg" id="start" disabled>답변 시작</button>`,
+  });
+  return `<div class="setup"><div class="setup-col">${question}${recording}</div><div class="setup-col">${calib}</div></div>`;
+}
 
-    <div class="setup-col">
-      <div class="panel card calib">
-        <div class="title">3. 준비 확인 (약 10초)</div>
-        <div class="preview" id="setup-preview"></div>
-        <ol class="steps">
-          <li data-step="face"><span class="mark">1</span><div><b>카메라를 정면으로 바라보세요</b><div class="hint"></div></div></li>
-          <li data-step="voice"><span class="mark">2</span><div><b>아래 문장을 평소 목소리로 읽어 주세요</b>
-            <div class="read-text">“${READ_TEXT}”</div><div class="hint"></div></div></li>
-        </ol>
-        <div class="progress"><div></div></div>
-        <div class="calib-actions">
-          <button class="btn" id="calib-run">준비 확인 시작</button>
-        </div>
-      </div>
-      <button class="btn primary start" id="start" disabled>연습 시작</button>
-      <button class="btn demo-start" id="demo-start" title="카메라·마이크 없이 가상 데이터로 모든 상태를 보여 줍니다">데모 데이터로 체험하기</button>
-      <button class="btn" id="last-review" ${app.lastReview ? '' : 'hidden'}>최근 답변 복기로 돌아가기</button>
-      <button class="btn demo-start" id="gaze-test" title="고개·눈 방향이 맞게 잡히는지 단계별로 점검합니다">시선 인식 테스트</button>
-    </div>
-  </div>`;
+/** 상단 바 오른쪽: 보조 동작은 눈에 덜 띄게(ghost) */
+function topActions() {
+  return `${button({ label: '최근 답변 복기로', id: 'last-review', variant: 'ghost', attrs: app.lastReview ? '' : 'hidden' })}
+    ${button({ label: '시선 인식 테스트', id: 'gaze-test', variant: 'ghost', attrs: 'title="고개·눈 방향이 맞게 잡히는지 단계별로 점검합니다"' })}
+    ${button({ label: '데모로 체험', id: 'demo-start', variant: 'ghost', attrs: 'title="카메라·마이크 없이 가상 데이터로 흐름을 체험합니다"' })}`;
 }
 
 function readForm() {
@@ -113,7 +111,7 @@ function readForm() {
 function applyPreset(key) {
   state.presetKey = key;
   const p = PRESETS[key];
-  root.querySelectorAll('.chip').forEach((c) => c.classList.toggle('on', c.dataset.preset === key));
+  root.querySelectorAll('.segmented [role=tab]').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.value === key)));
   root.querySelector('#rate-min').value = p.rateMin;
   root.querySelector('#rate-max').value = p.rateMax;
 
@@ -126,7 +124,7 @@ function setStep(name, cls, hint = '') {
   li.querySelector('.hint').textContent = hint;
 }
 
-function setProgress(f) { root.querySelector('.progress > div').style.width = `${Math.round(f * 100)}%`; }
+function setProgress(f) { root.querySelector('.progress > span').style.width = `${Math.round(f * 100)}%`; }
 
 function updateStart() {
   const btn = root.querySelector('#start');
@@ -135,9 +133,9 @@ function updateStart() {
   const voiceOk = !audio || state.calib.baseDb != null;
   const tried = state.tried;
   btn.disabled = !(tried && faceOk && voiceOk) || state.running;
-  if (!tried) { btn.textContent = '연습 시작'; return; }
+  if (!tried) { btn.textContent = '답변 시작'; return; }
   const missing = [!gaze && '카메라', !audio && '마이크'].filter(Boolean);
-  btn.textContent = missing.length ? `${missing.join('·')} 없이 연습 시작` : '연습 시작';
+  btn.textContent = missing.length ? `${missing.join('·')} 없이 답변 시작` : '답변 시작';
 }
 
 function stopDemoSensors() {
@@ -255,9 +253,11 @@ export function enter(appRef) {
   generation++;
   app = appRef;
   root = document.getElementById('screen-setup');
-  root.innerHTML = template();
   state = { presetKey: app.settings?.presetKey ?? 'interview', calib: { yaw0: null, pitch0: 0, eye0: null, baseDb: null, baseHz: null },
     tried: false, running: false, landmarks: null };
+  root.innerHTML = template();
+  document.getElementById('topbar-right').innerHTML = topActions();
+  bindTabs(root);
 
   applyPreset(state.presetKey);
   root.querySelector('#question').value = app.settings?.question ?? '';
@@ -270,11 +270,12 @@ export function enter(appRef) {
   root.querySelector('#dur-m').value = Math.floor(dur / 60);
   root.querySelector('#dur-s').value = dur % 60;
 
-  root.querySelectorAll('.chip').forEach((c) => c.addEventListener('click', () => applyPreset(c.dataset.preset)));
-  root.querySelector('#last-review').onclick = () => { app.settings = { ...app.settings, ...readForm() }; app.go('report'); };
+  root.querySelector('.segmented').addEventListener('change', (e) => applyPreset(e.detail.value));
+  const top = document.getElementById('topbar-right');
+  top.querySelector('#last-review').onclick = () => { app.settings = { ...app.settings, ...readForm() }; app.go('report'); };
   root.querySelector('#calib-run').addEventListener('click', runCalibration);
-  root.querySelector('#demo-start').addEventListener('click', startDemo);
-  root.querySelector('#gaze-test').addEventListener('click', () => { app.settings = { ...readForm() }; app.go('gazetest'); });
+  top.querySelector('#demo-start').addEventListener('click', startDemo);
+  top.querySelector('#gaze-test').addEventListener('click', () => { app.settings = { ...readForm() }; app.go('gazetest'); });
   if (app.demo && !app.demoAutoStarted) { app.demoAutoStarted = true; startDemo(); return; } // ?demo=1
   root.querySelector('#start').addEventListener('click', () => {
     const c = state.calib;

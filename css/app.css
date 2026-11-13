@@ -1,138 +1,99 @@
-/* 색·간격·글자 크기 등 모든 값은 css/tokens.css 에서 옵니다. 여기서는 토큰만 씁니다. */
+/* =====================================================================
+   화면 배치와 앱 고유 부품. 부품 모양(버튼·카드·입력·탭·표·배지·진행)은 Basecoat UI가 담당합니다.
+   주의: Basecoat 규칙은 CSS @layer 안에 있어서, 여기서 .btn/.card 등을 다시 정의하면 그쪽을 덮어씁니다.
+   색·크기는 css/tokens.css 의 토큰만 씁니다.
+   ===================================================================== */
 
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
 body {
-  background: var(--bg);
-  color: var(--text);
-  font: 14px/1.45 var(--font);
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  line-height: 1.5;
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
 }
-button { font: inherit; }
-[hidden] { display: none !important; }
-
-/* ===== 상호작용 공통 (키보드 포커스·커서) ===== */
-button, .chip, summary, [role="button"] { cursor: pointer; }
-button:disabled { cursor: not-allowed; }
-:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-radius: var(--radius-sm); }
-input:focus-visible { outline-offset: 0; } /* display:flex 등이 hidden 속성을 덮어쓰지 않게 */
+[hidden] { display: none !important; } /* display:flex 등이 hidden 속성을 덮어쓰지 않게 */
+summary { cursor: pointer; }
+.hint { font-size: var(--fs-caption); color: var(--muted-foreground); margin: 2px 0 0; }
 
 /* ===== 상단 바 ===== */
+#app-top { flex: none; }
 .topbar {
-  display: flex; align-items: center; gap: 16px;
-  height: 44px; padding: 0 16px;
+  display: flex; align-items: center; gap: var(--space-5);
+  height: 52px; padding: 0 var(--space-5);
   border-bottom: 1px solid var(--border);
-  background: var(--panel);
-  flex: none;
+  background: var(--background);
 }
-.brand { font-weight: var(--fw-bold); letter-spacing: .02em; }
-.brand span { color: var(--app-accent); }
-#flow { display: flex; gap: 6px; font-size: var(--fs-small); }
-#flow span { padding: 3px 10px; border-radius: var(--radius-sm); background: var(--bg); color: var(--muted-foreground); }
-#flow span.cur { background: var(--accent-bg); color: var(--app-accent); }
-#flow span.done { color: var(--text); }
-.topbar-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.brand { font-weight: 700; font-size: 15px; letter-spacing: -.01em; }
+.steps { display: flex; align-items: center; gap: var(--space-2); font-size: 13px; color: var(--muted-foreground); }
+.steps [aria-current="step"] { color: var(--foreground); font-weight: 600; }
+.step-sep { opacity: .5; }
+.topbar-right { margin-left: auto; display: flex; gap: var(--space-2); align-items: center; }
 
 main { flex: 1; min-height: 0; position: relative; }
 .screen { display: none; height: 100%; }
 .screen.active { display: block; }
 
-/* ===== 공통 패널 ===== */
+/* ===== 이전 화면 공통 패널 (Task 4~6에서 Basecoat 카드로 교체 후 삭제) ===== */
 .panel {
-  background: var(--panel);
+  background: var(--card);
   border: 1px solid var(--border);
-  border-left: 3px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg, 10px);
   padding: 10px 12px;
   min-width: 0;
-  transition: border-color var(--dur-base), background-color var(--dur-base);
 }
 .panel .title {
-  font-size: var(--fs-caption); font-weight: var(--fw-semibold); color: var(--muted-foreground);
-  text-transform: uppercase; letter-spacing: .05em;
+  font-size: var(--fs-caption); font-weight: 600; color: var(--muted-foreground);
 }
-.panel .value {
-  font-size: 40px; font-weight: var(--fw-semibold); line-height: 1.1;
-  font-variant-numeric: tabular-nums;
-  transition: color var(--dur-base);
-}
+.panel .value { font-size: 36px; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .panel .unit { font-size: 13px; color: var(--muted-foreground); margin-left: 4px; font-weight: 400; }
-.panel .sub { font-size: var(--fs-small); color: var(--muted-foreground); }
-
-.panel[data-status="ok"]   { border-left-color: var(--ok); }
-.panel[data-status="ok"] .value { color: var(--ok); }
-.panel[data-status="warn"] { border-left-color: var(--warn); }
-.panel[data-status="warn"] .value { color: var(--warn); }
-.panel[data-status="bad"]  { border-left-color: var(--bad); background: var(--bad-bg); }
-.panel[data-status="bad"] .value { color: var(--bad); }
-.panel[data-status="idle"] { border-left-color: var(--idle); }
-.panel[data-status="idle"] .value { color: var(--idle); }
-
-/* ===== 버튼 ===== */
-.btn {
-  background: var(--panel-2); color: var(--text);
-  border: 1px solid var(--border); border-radius: var(--radius-sm);
-  padding: 7px 14px; cursor: pointer;
-}
-.btn:hover { border-color: var(--muted-foreground); }
-.btn.primary { background: var(--btn-primary-bg); border-color: var(--btn-primary-bg); color: var(--on-accent); font-weight: var(--fw-semibold); }
-.btn.primary:disabled { background: var(--panel-2); border-color: var(--border); color: var(--muted-foreground); cursor: not-allowed; }
-.btn.danger { border-color: var(--bad); color: var(--bad); }
+.panel .sub { font-size: var(--fs-caption); color: var(--muted-foreground); }
 
 /* ===== 디버그 ===== */
 #debug {
   position: fixed; left: 8px; bottom: 8px; z-index: 50;
-  background: var(--scrim); color: var(--text); font: var(--fs-caption)/1.4 var(--font-mono);
-  padding: 6px 8px; border-radius: var(--radius-sm); white-space: pre; pointer-events: none;
+  background: var(--scrim); color: var(--foreground); font: var(--fs-caption)/1.4 var(--font-mono);
+  padding: 6px 8px; border-radius: 6px; white-space: pre; pointer-events: none;
 }
 
-/* ===== ① 설정 화면 ===== */
+/* ===== 공통 배치 도우미 ===== */
+.stack { display: flex; flex-direction: column; gap: 14px; }
+.row2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+.inline { display: flex; align-items: center; gap: var(--space-2); font-size: var(--fs-body); color: var(--muted-foreground); }
+.input.num { width: 76px; text-align: right; font-variant-numeric: tabular-nums; }
+.switch-row { display: flex; gap: var(--space-3); align-items: flex-start; cursor: pointer; }
+.switch-row > span { display: flex; flex-direction: column; }
+.switch-row b { font-weight: 600; }
+.disclosure summary { font-size: 13px; color: var(--muted-foreground); }
+.disclosure[open] summary { margin-bottom: var(--space-3); }
+.card > footer { display: flex; gap: var(--space-2); align-items: center; }
+.card > footer > .btn[data-size="lg"] { margin-left: auto; }
+
+/* ===== ① 질문 설정 + 준비 확인 ===== */
 .setup {
-  height: 100%; padding: 16px; overflow: auto;
-  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px;
-  max-width: 1200px; margin: 0 auto;
+  height: 100%; padding: var(--space-5); overflow: auto;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-4);
+  max-width: 1180px; margin: 0 auto; align-content: start;
 }
-.setup-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
-.card { border-left-color: var(--border); padding: 14px 16px; }
-.card .title { margin-bottom: 8px; }
-.card .sub { margin-top: 8px; }
-.chips { display: flex; gap: 8px; flex-wrap: wrap; }
-.chip {
-  background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm);
-  padding: 8px 14px; cursor: pointer;
-}
-.chip.on { border-color: var(--app-accent); color: var(--app-accent); background: var(--accent-bg); }
-.time-input { display: flex; align-items: center; gap: 6px; font-size: var(--fs-body); color: var(--muted-foreground); }
-.time-input input, .advanced input {
-  background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm);
-  font: 600 24px/1 var(--font); width: 72px; padding: 6px 8px; text-align: right;
-}
-.advanced input { font-size: var(--fs-body); width: 64px; }
-.advanced summary { cursor: pointer; margin: 0; }
-.advanced label { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; color: var(--muted-foreground); }
-.privacy { color: var(--muted-foreground); font-size: var(--fs-small); margin: 0 4px; }
-.preview { height: 260px; border-radius: var(--radius-sm); overflow: hidden; background: var(--video); margin-bottom: var(--space-2); }
-.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-.steps li { display: flex; gap: 10px; align-items: flex-start; color: var(--muted-foreground); }
-.steps li b { font-weight: var(--fw-semibold); }
-.steps .mark {
+.setup-col { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
+.preview { height: 220px; border-radius: 8px; overflow: hidden; background: var(--video); }
+.checklist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+.checklist li { display: flex; gap: var(--space-3); align-items: flex-start; color: var(--muted-foreground); }
+.checklist li b { font-weight: 600; }
+.checklist .mark {
   flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
-  background: var(--panel-2); font-size: var(--fs-small); font-weight: var(--fw-bold); color: var(--muted-foreground);
+  background: var(--muted); font-size: var(--fs-caption); font-weight: 700; color: var(--muted-foreground);
 }
-.steps li.active { color: var(--text); }
-.steps li.active .mark { background: var(--app-accent); color: var(--bg); }
-.steps li.done { color: var(--text); }
-.steps li.done .mark { background: var(--ok); color: var(--bg); }
-.steps li.fail .mark { background: var(--warn); color: var(--bg); }
-.steps li.fail .hint { color: var(--warn); }
-.steps li.done .hint { color: var(--ok); }
-.hint { font-size: var(--fs-small); margin-top: 2px; }
-.read-text { margin-top: 4px; padding: 6px 10px; background: var(--bg); border-radius: var(--radius-sm); color: var(--text); }
-.progress { height: 3px; background: var(--bg); border-radius: 2px; margin: 12px 0 10px; overflow: hidden; }
-.progress > div { height: 100%; width: 0; background: var(--app-accent); transition: width var(--dur-fast) linear; }
-.start { padding: 12px; font-size: 15px; }
+.checklist li.active, .checklist li.done, .checklist li.fail { color: var(--foreground); }
+.checklist li.active .mark { background: var(--muted); color: var(--foreground); box-shadow: 0 0 0 2px var(--ring); }
+.checklist li.done .mark { background: var(--foreground); color: var(--background); }
+.checklist li.fail .mark { background: var(--muted); color: var(--foreground); }
+.checklist li.fail .hint { color: var(--foreground); font-weight: 600; }
+.quote { margin: 6px 0 0; padding: 6px 10px; background: var(--muted); border-radius: 6px; color: var(--foreground); }
 
 /* ===== ② 연습 화면 ===== */
 .practice {
