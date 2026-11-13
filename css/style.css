@@ -143,3 +143,48 @@ main { flex: 1; min-height: 0; position: relative; }
 .progress { height: 3px; background: var(--bg); border-radius: 2px; margin: 12px 0 10px; overflow: hidden; }
 .progress > div { height: 100%; width: 0; background: var(--accent); transition: width .1s linear; }
 .start { padding: 12px; font-size: 15px; }
+
+/* ===== ② 연습 화면 (C안: 그라파나 그리드) ===== */
+.practice {
+  height: 100%; padding: 52px 12px 12px; position: relative;
+  display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 12px;
+}
+.gaze-pill {
+  position: absolute; top: 8px; left: 50%; transform: translateX(-50%); z-index: 5;
+  display: flex; align-items: center; gap: 8px; white-space: nowrap;
+  padding: 6px 16px; border-radius: 18px; font-size: 16px; font-weight: 600;
+  background: var(--panel); border: 1px solid var(--idle); color: var(--idle);
+  transition: border-color .2s, color .2s, background-color .2s;
+}
+.gaze-pill .dot { width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+.gaze-pill[data-status="ok"]   { border-color: var(--ok);   color: var(--ok); }
+.gaze-pill[data-status="warn"] { border-color: var(--warn); color: var(--warn); }
+.gaze-pill[data-status="bad"]  { border-color: var(--bad);  color: var(--bad); background: var(--bad-bg); }
+.gaze-pill .ratio[data-status="warn"] { color: var(--warn); }
+.gaze-pill .ratio[data-status="bad"]  { color: var(--bad); }
+
+.cam {
+  position: relative; min-height: 0; border-radius: var(--radius); overflow: hidden;
+  background: #0b0c0e; border: 3px solid var(--border); transition: border-color .2s;
+}
+.cam[data-status="ok"]   { border-color: rgba(115, 191, 105, .5); }
+.cam[data-status="warn"] { border-color: var(--warn); }
+.cam[data-status="bad"]  { border-color: var(--bad); }
+.cam canvas { display: block; }
+.countdown {
+  position: absolute; inset: 0; display: grid; place-items: center; z-index: 2;
+  font-size: 120px; font-weight: 700; color: #fff; text-shadow: 0 4px 24px rgba(0,0,0,.6);
+  pointer-events: none;
+}
+
+.side { display: grid; grid-template-rows: repeat(4, minmax(0, 1fr)); gap: 12px; min-height: 0; }
+.metric { display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
+.metric .value { font-size: clamp(32px, 6vh, 56px); }
+.metric .value.small { font-size: clamp(24px, 4vh, 36px); }
+.metric .note { color: var(--warn); }
+.sub-inline { text-transform: none; letter-spacing: 0; font-weight: 400; margin-left: 4px; }
+.vbar { position: relative; height: 8px; border-radius: 4px; background: var(--bg); margin: 4px 0; }
+/* 허용 범위 -6~+8 dB를 -15~+15 dB 막대 위에 표시 */
+.vbar-ok { position: absolute; top: 0; bottom: 0; left: 30%; width: 46.67%; background: rgba(115,191,105,.18); border-radius: 4px; }
+.vbar-mark { position: absolute; top: -3px; width: 4px; height: 14px; margin-left: -2px; border-radius: 2px; background: var(--text); left: 50%; transition: left .1s linear; }
+.spark { flex: 1; min-height: 30px; }
