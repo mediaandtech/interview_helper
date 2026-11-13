@@ -5,7 +5,7 @@ import { createDemoGaze } from '../sensors/demo.js';
 import { analyzeGaze, gazeGrid } from '../analysis/gaze-logic.js';
 import { GAZE_TEST_STEPS, frameMatches, frameLabel, evaluateStep, diagnose, PASS_PCT } from '../analysis/gaze-test.js';
 import { createWebcamSketch } from './webcam-sketch.js';
-import { createProgress } from './components.js';
+import { button, card, createProgress, dataTable } from './components.js';
 
 const PREP_MS = 2000;     // 안내를 읽고 자세를 잡는 시간
 const MEASURE_MS = 3000;  // 측정 시간
@@ -25,19 +25,17 @@ function template() {
   <div class="gtest">
     <div class="cam" id="gt-cam" data-status="idle"></div>
     <div class="gt-side">
-      <div class="panel gt-step">
-        <div class="head"><div class="title" id="gt-count">시선 인식 테스트</div><div class="num" id="gt-phase"></div></div>
+      <div class="card gt-step"><section>
+        <div class="metric-head"><span class="metric-title" id="gt-count">시선 인식 테스트</span><span class="metric-num" id="gt-phase"></span></div>
         <div class="gt-title" id="gt-title">고개와 눈 방향이 맞게 잡히는지 확인해요</div>
-        <div class="gt-say" id="gt-say">약 40초 걸려요. 화면 안내에 따라 고개와 눈을 움직여 주세요. 노트북 카메라 앞에 평소처럼 앉으면 됩니다.</div>
+        <p class="gt-say" id="gt-say">약 40초 걸려요. 화면 안내에 따라 고개와 눈을 움직여 주세요. 노트북 카메라 앞에 평소처럼 앉으면 됩니다.</p>
         <div id="gt-progress"></div>
         <div class="gt-now">지금 감지: <b id="gt-now">—</b> <span id="gt-ok"></span></div>
-        <button class="btn primary" id="gt-start">테스트 시작</button>
-      </div>
-      <div class="panel gt-live">
-        <div class="title">실시간 원시값 <span class="sub-inline">· 초록 영역 = 정면으로 보는 범위</span></div>
-        ${bar('yaw', '고개 좌우')}${bar('pitch', '고개 위아래')}${eyeBars}
-      </div>
-      <div class="panel gt-result" id="gt-result" hidden></div>
+        <p class="hint">장치가 방향을 제대로 읽는지 점검하는 화면이에요. 면접 수행 평가가 아니에요.</p>
+        <div>${button({ label: '테스트 시작', id: 'gt-start' })}</div>
+      </section></div>
+      ${card({ className: 'gt-live', title: '실시간 원시값', description: '밝은 영역 = 정면으로 보는 범위', html: `${bar('yaw', '고개 좌우')}${bar('pitch', '고개 위아래')}${eyeBars}` })}
+      <div class="card gt-result" id="gt-result" hidden></div>
     </div>
   </div>`;
 }
@@ -185,11 +183,11 @@ function finish() {
   const tips = diagnose(st.results).map((t) => `<li>${t}</li>`).join('');
   const box = $('gt-result');
   box.hidden = false;
-  box.innerHTML = `<div class="title">단계별 결과</div>
-    <table><thead><tr><th></th><th>단계</th><th>감지</th><th>일치</th><th>좌우/위아래</th></tr></thead><tbody>${rows}</tbody></table>
-    <div class="title" style="margin-top:10px">진단</div><ul class="gt-tips">${tips}</ul>
-    <div class="gt-actions"><button class="btn primary" id="gt-again">다시 테스트</button>
-    <button class="btn" id="gt-copy">결과 복사</button><span class="sub" id="gt-copied"></span></div>`;
+  box.innerHTML = `<header><h2>단계별 결과</h2></header><section class="stack">
+    ${dataTable({ columns: ['', '단계', '감지', '일치', '좌우/위아래'], rowsHtml: rows.split('</tr>').filter((x) => x.trim()).map((x) => `${x}</tr>`) })}
+    <div class="alert"><h2>진단</h2><section><ul class="gt-tips">${tips}</ul></section></div>
+    <div class="gt-actions">${button({ label: '다시 테스트', id: 'gt-again' })}${button({ label: '결과 복사', id: 'gt-copy', variant: 'outline' })}<span class="hint" id="gt-copied"></span></div>
+  </section>`;
   $('gt-again').addEventListener('click', () => begin());
   $('gt-copy').addEventListener('click', async () => {
     const txt = resultText();
@@ -237,6 +235,8 @@ export function enter(appRef) {
 
   const exit = document.createElement('button');
   exit.className = 'btn';
+  exit.type = 'button';
+  exit.dataset.variant = 'outline';
   exit.textContent = '설정으로';
   exit.addEventListener('click', () => {
     const url = new URL(location.href); url.searchParams.delete('gazetest'); history.replaceState(null, '', url);

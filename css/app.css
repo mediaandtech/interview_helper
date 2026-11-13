@@ -198,34 +198,27 @@ main { flex: 1; min-height: 0; position: relative; }
 .report-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .print-note, .print-chart { display: none; }
 
-/* ===== 시선 인식 테스트 ===== */
-.gtest { height: 100%; padding: 12px; display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 12px; }
-.gt-side { display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow: auto; }
-.gt-step { display: flex; flex-direction: column; gap: 8px; border-left-color: var(--app-accent); }
-.gt-step .head { display: flex; justify-content: space-between; }
-.gt-step .num { color: var(--warn); font-size: 13px; font-weight: 600; }
-.gt-title { font-size: clamp(24px, 4.4vh, 36px); font-weight: 700; line-height: 1.15; }
-.gt-say { color: var(--text); font-size: 15px; }
-.gt-now { font-size: 14px; color: var(--muted-foreground); }
-.gt-now b { color: var(--text); font-size: 18px; }
-.gt-now span { color: var(--ok); font-weight: 700; margin-left: 6px; }
-.gt-live { display: flex; flex-direction: column; gap: 7px; }
-.gt-bar { display: grid; grid-template-columns: 74px 1fr 46px; align-items: center; gap: 8px; font-size: 12px; }
+/* ===== 시선 인식 테스트 (장치 점검 — 일치 여부만 초록/노랑 글자로) ===== */
+.gtest { height: 100%; padding: var(--space-5); display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: var(--space-4); }
+.gtest .cam { min-height: 0; }
+.gt-side { display: flex; flex-direction: column; gap: var(--space-3); min-height: 0; overflow: auto; }
+.gt-side > * { flex-shrink: 0; } /* 결과가 길어져도 카드가 눌리지 않고 열 전체가 스크롤 */
+.gt-step > section { display: flex; flex-direction: column; gap: var(--space-2); }
+.gt-title { font-size: clamp(22px, 4vh, 30px); font-weight: 700; line-height: 1.2; }
+.gt-say { margin: 0; font-size: var(--fs-lead); }
+.gt-now { font-size: var(--fs-body); color: var(--muted-foreground); }
+.gt-now b { color: var(--foreground); font-size: var(--fs-title); }
+.gt-now span { color: var(--foreground); font-weight: 700; margin-left: 6px; }
+.gt-live > section { display: flex; flex-direction: column; gap: var(--space-2); }
+.gt-bar { display: grid; grid-template-columns: 78px 1fr 46px; align-items: center; gap: var(--space-2); font-size: var(--fs-caption); }
 .gt-bl { color: var(--muted-foreground); }
 .gt-val { text-align: right; font-variant-numeric: tabular-nums; }
-.gt-track { position: relative; height: 10px; border-radius: 5px; background: var(--bg); }
-.gt-zone { position: absolute; top: 0; bottom: 0; background: var(--gauge-band); border-radius: var(--radius-pill); }
-.gt-mark { position: absolute; top: -4px; width: 6px; height: 18px; margin-left: -3px; border-radius: 3px; background: var(--text); }
-.gt-mark[data-status="ok"] { background: var(--ok); }
-.gt-mark[data-status="bad"] { background: var(--bad); }
-.gt-result { border-left-color: var(--border); }
-.gt-result table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 6px; }
-.gt-result th { text-align: left; color: var(--muted-foreground); font-size: 11px; font-weight: 600; padding: 3px 6px; border-bottom: 1px solid var(--border); }
-.gt-result td { padding: 4px 6px; border-bottom: 1px solid var(--border); }
-.gt-result tr[data-pass="true"] td:first-child { color: var(--ok); font-weight: 700; }
-.gt-result tr[data-pass="false"] td:first-child { color: var(--bad); font-weight: 700; }
-.gt-tips { margin: 6px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
-.gt-actions { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+.gt-track { position: relative; height: 8px; border-radius: 999px; background: var(--muted); }
+.gt-zone { position: absolute; top: 0; bottom: 0; background: var(--range-band); border-radius: 999px; }
+.gt-mark { position: absolute; top: -4px; width: 4px; height: 16px; margin-left: -2px; border-radius: 2px; background: var(--foreground); }
+.gt-result td:first-child { font-weight: 700; }
+.gt-tips { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.gt-actions { display: flex; gap: var(--space-2); align-items: center; }
 
 @media (max-width: 760px) {
   .setup, .gtest, .review-grid, .row2 { grid-template-columns: 1fr; }
