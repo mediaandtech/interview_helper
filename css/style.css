@@ -1,0 +1,99 @@
+/* ===== 그라파나 다크 테마 토큰 ===== */
+:root {
+  --bg: #111217;
+  --panel: #181b1f;
+  --panel-2: #1f2228;
+  --border: #2a2d35;
+  --text: #ccccdc;
+  --muted: #8e8e9e;
+  --accent: #5794f2;
+  --accent-bg: #14213a;
+  --ok: #73bf69;
+  --warn: #ff9830;
+  --bad: #f2495c;
+  --bad-bg: #2a1418;
+  --idle: #8e8e9e;
+  --radius: 4px;
+  --font: Inter, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.45 var(--font);
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+button { font: inherit; }
+
+/* ===== 상단 바 ===== */
+.topbar {
+  display: flex; align-items: center; gap: 16px;
+  height: 44px; padding: 0 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+  flex: none;
+}
+.brand { font-weight: 700; letter-spacing: .02em; }
+.brand span { color: var(--accent); }
+#flow { display: flex; gap: 6px; font-size: 12px; }
+#flow span { padding: 3px 10px; border-radius: 3px; background: var(--bg); color: var(--muted); }
+#flow span.cur { background: var(--accent-bg); color: var(--accent); }
+#flow span.done { color: var(--text); }
+.topbar-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+
+main { flex: 1; min-height: 0; position: relative; }
+.screen { display: none; height: 100%; }
+.screen.active { display: block; }
+
+/* ===== 공통 패널 ===== */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  min-width: 0;
+  transition: border-color .25s, background-color .25s;
+}
+.panel .title {
+  font-size: 11px; font-weight: 600; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .05em;
+}
+.panel .value {
+  font-size: 40px; font-weight: 600; line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  transition: color .25s;
+}
+.panel .unit { font-size: 13px; color: var(--muted); margin-left: 4px; font-weight: 400; }
+.panel .sub { font-size: 12px; color: var(--muted); }
+
+.panel[data-status="ok"]   { border-left-color: var(--ok); }
+.panel[data-status="ok"] .value { color: var(--ok); }
+.panel[data-status="warn"] { border-left-color: var(--warn); }
+.panel[data-status="warn"] .value { color: var(--warn); }
+.panel[data-status="bad"]  { border-left-color: var(--bad); background: var(--bad-bg); }
+.panel[data-status="bad"] .value { color: var(--bad); }
+.panel[data-status="idle"] { border-left-color: var(--idle); }
+.panel[data-status="idle"] .value { color: var(--idle); }
+
+/* ===== 버튼 ===== */
+.btn {
+  background: var(--panel-2); color: var(--text);
+  border: 1px solid var(--border); border-radius: 3px;
+  padding: 7px 14px; cursor: pointer;
+}
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: #3d71d9; border-color: #3d71d9; color: #fff; font-weight: 600; }
+.btn.primary:disabled { background: var(--panel-2); border-color: var(--border); color: var(--muted); cursor: not-allowed; }
+.btn.danger { border-color: var(--bad); color: var(--bad); }
+
+/* ===== 디버그 ===== */
+#debug {
+  position: fixed; left: 8px; bottom: 8px; z-index: 50;
+  background: rgba(0,0,0,.75); color: #9fe; font: 11px/1.4 ui-monospace, monospace;
+  padding: 6px 8px; border-radius: 3px; white-space: pre; pointer-events: none;
+}

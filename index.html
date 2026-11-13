@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>발표 연습 대시보드</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="vendor/p5.min.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Speech<span>Board</span></div>
+    <nav id="flow" aria-label="진행 단계">
+      <span data-step="setup">① 설정</span>
+      <span data-step="practice">② 연습</span>
+      <span data-step="report">③ 리포트</span>
+    </nav>
+    <div class="topbar-right" id="topbar-right"></div>
+  </header>
+
+  <main>
+    <section id="screen-setup" class="screen"></section>
+    <section id="screen-practice" class="screen"></section>
+    <section id="screen-report" class="screen"></section>
+  </main>
+
+  <div id="debug" hidden></div>
+  <script type="module" src="js/ui/app.js"></script>
+</body>
+</html>
