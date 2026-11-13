@@ -38,21 +38,6 @@ main { flex: 1; min-height: 0; position: relative; }
 .screen { display: none; height: 100%; }
 .screen.active { display: block; }
 
-/* ===== 이전 화면 공통 패널 (Task 4~6에서 Basecoat 카드로 교체 후 삭제) ===== */
-.panel {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg, 10px);
-  padding: 10px 12px;
-  min-width: 0;
-}
-.panel .title {
-  font-size: var(--fs-caption); font-weight: 600; color: var(--muted-foreground);
-}
-.panel .value { font-size: 36px; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
-.panel .unit { font-size: 13px; color: var(--muted-foreground); margin-left: 4px; font-weight: 400; }
-.panel .sub { font-size: var(--fs-caption); color: var(--muted-foreground); }
-
 /* ===== 디버그 ===== */
 #debug {
   position: fixed; left: 8px; bottom: 8px; z-index: 50;
@@ -187,7 +172,7 @@ main { flex: 1; min-height: 0; position: relative; }
 .stat-value { font-size: var(--fs-stat); font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.15; }
 .stat-sub { font-size: var(--fs-caption); color: var(--muted-foreground); }
 .tabs [role="tabpanel"] { padding-top: var(--space-3); }
-.inline .input { flex: 1; }
+.inline .input:not(.num) { flex: 1; } /* 숫자 칸(분·초·범위)은 좁게 유지 */
 .markers { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--space-1); }
 .markers li { display: flex; align-items: center; gap: var(--space-2); }
 .markers li .btn:first-child { flex: 1; justify-content: flex-start; text-align: left; overflow-wrap: anywhere; white-space: normal; height: auto; }

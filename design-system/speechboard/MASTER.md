@@ -1,106 +1,76 @@
-# SpeechBoard 디자인 시스템 — MASTER
+# 답변 복기 디자인 시스템 — MASTER
 
-> 화면을 만들거나 고칠 때 이 문서가 기준입니다. 특정 화면 규칙은 `pages/<화면>.md`가 이 문서보다 우선합니다.
-> 살아 있는 예시: `styleguide.html` (실제 CSS·컴포넌트로 그려짐)
+> 화면을 만들거나 고칠 때 이 문서가 기준입니다. 화면별 규칙은 `pages/<화면>.md`가 우선합니다.
+> 살아 있는 예시: `styleguide.html` (실제 컴포넌트 함수·CSS로 그려짐)
 
-## 1. 제품과 방향
+## 1. 기반
 
 | 항목 | 내용 |
 |---|---|
-| 제품 | 웹캠·마이크 기반 발표 연습 대시보드 (실시간 + 종료 후 리포트) |
-| 사용 장면 | 노트북 앞에 앉아 발표하면서 화면을 **1초 이내로 흘끗** 확인. 시연은 1280×720 프로젝터 |
-| 스타일 | 그라파나 계열 다크 대시보드 × 미니멀(스위스) — 정보 밀도 높음, 장식 최소 |
-| 다이얼 | 변화 3/10(차분·정돈), 움직임 2/10(값이 바뀔 때만), 밀도 8/10(대시보드) |
-
-ui-ux-pro-max `--design-system` 추천(“Real-Time / Operations”, Minimalism & Swiss, 상태색 초록/주황/빨강, 다크)과 방향이 같습니다.
-**추천과 다르게 정한 것**
-- 팔레트: 추천 Slate 계열 대신 팀이 정한 그라파나 색(`#111820`/`#1d2935`)을 유지.
-- 글꼴: 추천 Fira Sans/Code는 한글이 없고 인터넷이 필요 → 시스템 글꼴(Apple SD Gothic Neo) + 숫자 고정폭(`tabular-nums`). 오프라인 시연 조건 때문.
+| 제품 | 면접 답변을 녹화·측정한 뒤 **직접** 돌아보는 도구 (점수·자동 평가 없음) |
+| UI 라이브러리 | **Basecoat UI 1.1.0** (shadcn/ui 디자인 언어, React 없음) — `vendor/basecoat/basecoat.cdn.min.css` 로컬 로드 |
+| 테마 | 기본 스타일 팩(Vega), 다크 무채색 — `<html class="dark">` |
+| 빌드 | 없음. Tailwind 유틸리티 클래스는 쓰지 않음(CDN CSS에 없음). 배치는 `css/app.css` |
+| 글꼴 | 시스템 + `Apple SD Gothic Neo` (Basecoat 기본 Geist는 불러오지 않음 — 오프라인) |
 
 ## 2. 원칙
 
-1. **숫자보다 상태가 먼저** — 큰 글자는 상태 단어, 숫자는 보조.
-2. **패널 하나에 핵심 하나** — 제목 → 상태 → 기준이 보이는 시각화 → 보조 정보.
-3. **색은 의미에만** — 초록 적정 / 주황 주의 / 빨강 이탈 / 회색 측정 대기.
-4. **색만으로 말하지 않기** — 상태색에는 항상 글자 라벨(적정·작음·빠름·단조·정면…).
-5. **깜빡이지 않기** — 상태 변경은 1초 유지 후(시선: 1.5초 주황, 3초 빨강, 복귀 0.5초).
-6. **프로젝터 가독성** — 상태 단어 ≥28px, 남은 시간 ≥34px, 1280×720 가로 스크롤 없음.
-7. **데이터가 없으면 지어내지 않기** — 숫자 대신 `측정 대기`, 말하지 않는 동안 크기는 `쉬는 중`.
-8. **장식 최소** — 그림자·그라데이션·장식 애니메이션 없음. 움직임은 값 변화만, 짧게.
+1. **측정값은 판정하지 않는다** — 범위 밖이어도 색을 바꾸지 않음. 중립 문구(참고 범위 안/위/아래, 기준 대비 변화, ○○을 보고 있어요)만.
+2. **참고 범위는 위치만** — 게이지·그래프의 옅은 띠(`--range-band`)로 어디쯤인지만.
+3. **빨강(`--destructive`)은 두 곳에만** — 녹화 중 표시, 삭제·끝내기.
+4. **카드 하나에 한 가지** — 제목 → 설명 → 내용 → 동작(footer).
+5. **숫자는 고정폭** — `font-variant-numeric: tabular-nums`.
+6. **오프라인** — 라이브러리·글꼴을 인터넷에서 불러오지 않음.
+7. **키보드로도** — 모든 버튼·탭·입력에 포커스 테두리(Basecoat), 탭은 ←/→ 키.
+8. **장치 점검 화면만 예외** — 시선 인식 테스트는 “맞음/아님”을 보여 주는 장치 점검이라 결과 표에 ✓/✗를 씀. 그래도 측정값 막대는 중립.
 
-## 3. 토큰 (원본: `css/tokens.css`)
+## 3. 토큰 (`css/tokens.css`)
 
-3단계: **원시값**(`--gray-900`, `--red-400`…) → **의미**(`--bg`, `--ok`, `--bad-text`…) → **컴포넌트**(`--gauge-band`, `--btn-primary-bg`…).
-화면 CSS는 의미·컴포넌트 토큰만 씁니다. p5 그림용 값은 `js/config.js`(THEME, STATUS_COLORS, SERIES_COLORS)에 같은 값이 있고, `tests/tokens.test.js`가 둘이 어긋나거나 `style.css`에 색이 직접 적히면 실패합니다.
+`html.dark` 블록이 Basecoat 다크 토큰을 같은 색의 hex로 고정합니다. p5 그림용 같은 값이 `js/config.js`(`THEME`, `SERIES_COLORS`)에 있고 `tests/tokens.test.js`가 일치와 `app.css`의 hex 직접 사용 금지를 검사합니다.
 
-### 색 (패널 `#1d2935` 위 대비)
-| 의미 토큰 | 값 | 쓰임 | 대비 |
-|---|---|---|---|
-| `--bg` | #111820 | 페이지 배경 | — |
-| `--panel` | #1d2935 | 패널 | — |
-| `--panel-2` | #243241 | 배지·버튼 면 | — |
-| `--video` | #0a0f14 | 웹캠·그래프 바탕 | — |
-| `--border` | #2c3b4a | 구분선(장식) | — |
-| `--text` | #d8dee9 | 본문 | 10.9 |
-| `--muted` | #9aa5b4 | 보조 글자 | 5.9 (패널-2 위 5.2) |
-| `--accent` / `--accent-text` | #5794f2 / #79a6f6 | 선택·링크 / 작은 링크 글자 | 4.9 / 6.1 |
-| `--accent-strong` | #3d71d9 | 주 버튼 배경 (흰 글자 4.6) | — |
-| `--ok` | #73bf69 | 적정 | 6.6 |
-| `--warn` | #ff9830 | 주의 | 6.9 |
-| `--bad` | #f2495c | 이탈: 채우기·테두리·**큰 글자** | 4.1 (큰 글자 기준 3:1 충족) |
-| `--bad-text` | #ff6b7d | 이탈: **작은 글자** | 5.4 |
-| `--bad-bg` | #3a1d26 | 이탈 패널 배경 | — |
-| `--idle` | #9aa5b4 | 측정 대기 | 5.9 |
-| `--series-*` | 초록/파랑/보라/노랑 | 그래프 선(속도/크기/억양/고개 각도) | — |
-
-### 글자
-| 토큰 | 크기 | 쓰임 |
+| 토큰 | 값 | 쓰임 |
 |---|---|---|
-| `--fs-caption` | 11px | 패널 제목(대문자 간격), 게이지 끝 라벨 — 이보다 작게 쓰지 않음 |
-| `--fs-small` | 12px | 보조 설명 |
-| `--fs-body` | 14px | 본문·표 |
-| `--fs-lead` | 16px | 시선 알약, 안내 문장 |
-| `--fs-title` | 18px | 리포트 한 줄 결론 |
-| `--fs-number` | 22px | 패널 오른쪽 위 보조 숫자 |
-| `--fs-state` | clamp(28–46px) | 상태 단어 |
-| `--fs-display` | clamp(34–58px) | 남은 시간 |
-| `--fs-score` | 64px | 리포트 점수 |
-숫자는 항상 `font-variant-numeric: tabular-nums` (값이 바뀌어도 폭이 흔들리지 않게).
+| `--background` | #0a0a0a | 페이지 |
+| `--card` | #171717 | 카드 |
+| `--muted` | #262626 | 배지·트랙·탭 바탕 |
+| `--border` | #2e2e2e | 구분선 |
+| `--foreground` | #fafafa | 본문·숫자·게이지 마커 |
+| `--muted-foreground` | #a1a1a1 | 설명·라벨 |
+| `--primary` / `--primary-foreground` | #e5e5e5 / #171717 | 주 버튼 |
+| `--destructive` | #ff6467 | 녹화 중·삭제·끝내기 |
+| `--chart-1` / `--chart-2` / `--chart-3` | #93c5fd / #3b82f6 / #2563eb | 속도·음높이 선 / 음량 선 / 정면 범위 안 |
+| `--range-band` | foreground 22% | 참고 범위 띠 |
+| `--video` | #000000 | 웹캠·영상 바탕 |
+| `--scrim` | 검정 60% | 영상 위 글자 바탕 |
 
-### 간격·모양·움직임
-- 간격: `--space-1..8` = 4, 8, 12, 16, 20, 24, 32px (대시보드 밀도)
-- 모서리: `--radius-sm` 3px(배지·버튼) / `--radius` 4px(패널) / `--radius-pill`
-- 상태 띠: 패널 왼쪽 `--stripe` 3px
-- 움직임: `--dur-fast` 120ms(게이지 마커), `--dur-base` 200ms(상태색). `prefers-reduced-motion`이면 0ms.
+글자: `--fs-caption 12` · `--fs-body 14` · `--fs-lead 16` · `--fs-title 18` · `--fs-metric 24` · `--fs-stat 26` · `--fs-clock 32` (px)
+간격: `--space-1..8` = 4·8·12·16·20·24·32 px · 움직임: `--dur-fast 120ms`, `--dur-base 200ms` (동작 줄이기 설정이면 0)
 
-## 4. 컴포넌트
+## 4. 컴포넌트 (`js/ui/components.js`)
 
-| 이름 | 위치 | 규칙 |
+문자열 인자는 자동 이스케이프, `html`/`*Html` 인자는 그대로 삽입.
+
+| 함수 | 만드는 것 | Basecoat 마크업 |
 |---|---|---|
-| 지표 패널 `.panel.metric[data-status]` | `style.css` | 제목·보조 숫자(위) → 상태 단어(크게) → 시각화 → 꼬리 정보. `data-status`가 띠·글자색·(이탈 시)배경을 함께 바꿈 |
-| 범위 밴드 게이지 `createGauge()` | `js/ui/components.js` | `왼쪽 라벨 ─ [적정 띠] ─ 오른쪽 라벨`, 마커 = 현재 값, 값 없으면 마커 숨김 |
-| 진행 막대 `createProgress()` | 〃 | 남은 시간 진행률, 상태색 채우기 |
-| 시선 알약 `.gaze-pill` + `.gaze-parts` | 카메라 바로 아래 | 왼쪽 지금 상태 / 오른쪽 누적 %, 아래 칩으로 고개·눈 구분 |
-| 웹캠 오버레이 `createWebcamSketch()` | p5 | 얼굴 점은 옅게(1/4), 고개 = 코에서 굵은 상태색 화살표, 눈 = 눈동자에서 가는 파란 화살표, 정면 = 코 위 초록 원. 테두리 = 시선 상태 |
-| 억양 그래프 `createSparkline()` | p5 | 최근 10초, 기준 음높이 점선, 튀는 값 제거, 침묵은 끊어서 |
-| 버튼 `.btn` / `.btn.primary` / `.btn.danger`, 칩 `.chip` | `style.css` | 높이 ≈36px, 키보드 포커스 테두리 `--focus-ring` |
-| 표 (이탈 구간·지난 기록·시선 테스트) | `style.css` | 11px 대문자 머리글, 숫자 열 고정폭 |
+| `topBar({ step })` | 상단 바(앱 이름·단계·`#topbar-right`) | — |
+| `button({ label, id, variant, size, attrs })` | 버튼 | `.btn[data-variant][data-size]` |
+| `badge({ label, variant })` | 배지 | `.badge[data-variant]` |
+| `card({ title, description, html, footerHtml, id, className })` | 카드 | `.card > header / section / footer` |
+| `field({ label, forId, controlHtml, hint })` | 라벨+입력 | `.field > .label` |
+| `switchField({ id, label, hint, checked })` | 스위치 | `input.input[type=checkbox][role=switch]` |
+| `segmented({ name, options, value })` | 탭 모양 단일 선택(`change` 이벤트) | `.tabs [role=tab]` |
+| `tabs({ id, items, selected })` + `bindTabs(root)` | 탭+패널(숨겨도 DOM 유지) | `.tabs [role=tablist]/[role=tabpanel]` |
+| `statGrid(items)` | 관찰 요약 숫자 | — |
+| `metricCard({ id, title, numId, stateId, extraHtml })` | 답변 중 지표 카드(중립) | `.card` |
+| `checklist(items)` | 준비 확인 단계 | — |
+| `emptyState({ title, text })` | 빈 상태 | `.empty` |
+| `dataTable({ columns, rowsHtml })` | 표 | `.table-container > .table` |
+| `createGauge(el, opt)` / `createProgress(el)` | 범위 게이지 / 진행 막대(동작형) | — |
 
-## 5. 접근성 체크리스트
+## 5. 하지 말 것
 
-- [x] 글자 대비 4.5:1(작은 글자) / 3:1(큰 글자·그래픽) — 위 표
-- [x] 상태는 색 + 글자 라벨
-- [x] 모든 버튼·칩·입력에 `:focus-visible` 테두리, 클릭 요소 `cursor: pointer`
-- [x] `prefers-reduced-motion` 존중
-- [x] 데이터 없음은 `측정 대기`로 명시(가짜 값 금지)
-- [x] 실시간 그래프의 대체 수단: 상태 단어 + 리포트의 이탈 구간 표
-- [ ] (선택) 리포트 시선 띠에 색 외 무늬 추가 — 현재는 툴팁·표로 대체
-
-## 6. 하지 말 것
-
-- 원시값(`#hex`, `--gray-*`)을 화면 CSS에 직접 쓰기 → 의미 토큰 사용
-- 같은 정보를 색으로만 표시
-- 패널에 숫자를 가장 크게 두기
-- 그림자·그라데이션·반짝이는 애니메이션
-- 짧은 변동마다 색 바꾸기(히스테리시스 없이)
-- 이모지를 아이콘으로 쓰기
+- `app.css`에서 `.btn`, `.card`, `.input` 등 Basecoat 클래스를 다시 정의 — Basecoat는 `@layer` 안에 있어 우리 규칙이 이겨 버림. 배치만 쓰고 모양은 `data-variant`로.
+- 전역 `button`/`input`/`textarea` 규칙 추가(같은 이유).
+- 측정값에 초록·주황·빨강.
+- hex 색 직접 사용(토큰 사용).
+- 이모지 아이콘.

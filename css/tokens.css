@@ -38,7 +38,6 @@ html.dark {
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
 
   /* 앱 토큰 */
-  --rec: var(--destructive);         /* 녹화 중 표시 — 측정값에는 쓰지 않음 */
   --video: #000000;                  /* 웹캠·영상 바탕 */
   --range-band: color-mix(in oklab, var(--foreground) 22%, transparent); /* 참고 범위 띠(위치만 표시) */
   --scrim: rgba(0, 0, 0, .6);        /* 영상 위 글자 바탕 */
@@ -59,40 +58,6 @@ html.dark {
   /* 움직임 */
   --dur-fast: 120ms;
   --dur-base: 200ms;
-
-  /* ---- 이전 화면 CSS 호환 별칭 (Task 3~7에서 화면을 바꾸며 제거) ---- */
-  --bg: var(--background);
-  --panel: var(--card);
-  --panel-2: var(--muted);
-  --text: var(--foreground);
-  --app-accent: var(--chart-1);
-  --accent-text: var(--chart-1);
-  --accent-strong: var(--primary);
-  --accent-bg: var(--muted);
-  --on-accent: var(--primary-foreground);
-  --focus-ring: var(--ring);
-  --ok: #4ade80;
-  --warn: #fbbf24;
-  --bad: #ff6467;
-  --bad-text: #ff6467;
-  --bad-bg: color-mix(in oklab, var(--destructive) 18%, var(--card));
-  --idle: var(--muted-foreground);
-  --ok-soft: var(--range-band);
-  --ok-line: var(--border);
-  --series-rate: var(--chart-1);
-  --series-volume: var(--chart-2);
-  --series-pitch: var(--chart-1);
-  --gauge-band: var(--range-band);
-  --btn-primary-bg: var(--primary);
-  --radius-sm: 6px;
-  --radius-pill: 999px;
-  --fs-small: 12px;
-  --fs-number: 22px;
-  --fs-state: var(--fs-metric);
-  --fs-display: var(--fs-clock);
-  --fs-score: 48px;
-  --fw-semibold: 600;
-  --fw-bold: 700;
 }
 
 @media (prefers-reduced-motion: reduce) {

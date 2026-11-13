@@ -1,151 +1,138 @@
 <!doctype html>
-<html lang="ko">
+<html lang="ko" class="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SpeechBoard 디자인 시스템</title>
+  <title>답변 복기 디자인 시스템</title>
   <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="vendor/basecoat/basecoat.cdn.min.css">
   <link rel="stylesheet" href="css/tokens.css">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/app.css">
   <style>
-    /* 스타일 가이드 페이지 자체의 배치(앱에는 쓰이지 않음) */
-    body { display: block; overflow: auto; }
-    .sg { max-width: 1180px; margin: 0 auto; padding: var(--space-6) var(--space-4) 80px; }
-    .sg h1 { font-size: 28px; margin: 0 0 var(--space-1); }
-    .sg h2 { font-size: var(--fs-title); margin: var(--space-8) 0 var(--space-3); padding-bottom: var(--space-2); border-bottom: 1px solid var(--border); }
-    .sg h3 { font-size: var(--fs-body); color: var(--muted); margin: var(--space-4) 0 var(--space-2); font-weight: var(--fw-semibold); }
-    .sg p.lead { color: var(--muted); margin: 0 0 var(--space-4); }
-    .sg code { font-family: var(--font-mono); font-size: var(--fs-small); color: var(--accent-text); }
+    /* 이 페이지 자체의 배치(앱에는 쓰이지 않음) */
+    body { display: block; overflow: auto; height: auto; }
+    .sg { max-width: 1180px; margin: 0 auto; padding: var(--space-8) var(--space-5) 80px; }
+    .sg h1 { font-size: 28px; margin: 0 0 var(--space-2); }
+    .sg > h2 { font-size: var(--fs-title); margin: var(--space-8) 0 var(--space-3); padding-bottom: var(--space-2); border-bottom: 1px solid var(--border); }
+    .sg h3 { font-size: var(--fs-body); color: var(--muted-foreground); margin: var(--space-5) 0 var(--space-2); font-weight: 600; }
+    .sg code { font-family: var(--font-mono); font-size: var(--fs-caption); color: var(--chart-1); }
+    .lead { color: var(--muted-foreground); margin: 0; max-width: 760px; }
     .grid { display: grid; gap: var(--space-3); }
     .g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .sw { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--panel); }
-    .sw .chip-c { height: 54px; }
-    .sw .meta { padding: var(--space-2) var(--space-3); font-size: var(--fs-small); }
-    .sw .meta b { display: block; font-size: var(--fs-body); }
-    .sw .meta span { color: var(--muted); }
-    .typerow { display: grid; grid-template-columns: 170px 1fr; align-items: baseline; gap: var(--space-3); padding: var(--space-2) 0; border-bottom: 1px solid var(--border); }
-    .typerow code { color: var(--muted); }
+    .row { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; }
+    .sw { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--card); }
+    .sw i { display: block; height: 48px; }
+    .sw div { padding: var(--space-2) var(--space-3); font-size: var(--fs-caption); }
+    .sw b { display: block; font-size: var(--fs-body); }
+    .typerow { display: grid; grid-template-columns: 180px 1fr; align-items: baseline; gap: var(--space-3); padding: var(--space-2) 0; border-bottom: 1px solid var(--border); }
     .space { display: flex; align-items: flex-end; gap: var(--space-4); }
-    .space div { background: var(--accent); }
-    .space small { display: block; color: var(--muted); margin-top: var(--space-1); }
-    .demo-metric { height: 180px; }
-    .rule { font-size: var(--fs-small); color: var(--muted); margin-top: var(--space-2); }
-    .row { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; }
-    .principles li { margin: var(--space-1) 0; }
+    .space i { display: block; background: var(--chart-2); }
+    .space small { display: block; color: var(--muted-foreground); margin-top: 4px; }
+    .principles { list-style: decimal; padding-left: 22px; }
+    .principles li { margin: 4px 0; }
+    .demo-cam { position: relative; height: 140px; border-radius: 12px; background: var(--video); border: 1px solid var(--border); }
     @media (max-width: 900px) { .g4, .g3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   </style>
 </head>
 <body>
-<main class="sg">
-  <h1>SpeechBoard 디자인 시스템</h1>
-  <p class="lead">발표 중 <b>1초 안에</b> 내 상태를 읽을 수 있게 만드는 그라파나 계열 다크 대시보드. 이 페이지는 실제 앱과 같은 <code>css/tokens.css</code>·<code>css/style.css</code>·<code>js/ui/components.js</code>로 그려집니다.</p>
+<main class="sg" id="sg"></main>
+<script type="module">
+  import { THEME, SERIES_COLORS } from './js/config.js';
+  import { button, badge, card, field, switchField, segmented, tabs, bindTabs, statGrid, metricCard, checklist, emptyState, dataTable, topBar, createGauge, createProgress } from './js/ui/components.js';
+
+  const sw = (list) => list.map(([name, token, hex, use]) =>
+    `<div class="sw"><i style="background:var(${token})"></i><div><b>${name}</b><code>${token}</code> · ${hex}<br><span class="hint">${use}</span></div></div>`).join('');
+
+  document.getElementById('sg').innerHTML = `
+  <h1>답변 복기 디자인 시스템</h1>
+  <p class="lead">Basecoat UI(shadcn/ui 디자인 언어) 다크 테마 위에 앱 토큰과 배치를 얹었습니다. 이 페이지의 모든 부품은 실제 앱과 같은 <code>js/ui/components.js</code> 함수와 CSS로 그려집니다.</p>
 
   <h2>원칙</h2>
   <ol class="principles">
-    <li><b>숫자보다 상태가 먼저.</b> 큰 글자는 상태 단어(적정/빠름), 숫자는 오른쪽 위에 작게.</li>
-    <li><b>패널 하나에 핵심 하나.</b> 제목 → 상태 → 기준이 보이는 게이지/그래프 → 보조 정보.</li>
-    <li><b>색은 의미에만.</b> 초록=적정, 주황=주의, 빨강=이탈, 회색=측정 대기. 장식용 색 없음.</li>
-    <li><b>색만으로 말하지 않기.</b> 모든 상태색에는 글자 라벨이 함께 붙습니다.</li>
-    <li><b>깜빡이지 않기.</b> 상태는 1초 유지돼야 바뀜(시선은 1.5초 주황 / 3초 빨강 / 복귀 0.5초).</li>
-    <li><b>프로젝터에서도 읽히게.</b> 상태 단어 최소 28px, 남은 시간 최소 34px, 1280×720에서 가로 스크롤 없음.</li>
-    <li><b>장식 최소.</b> 그림자·그라데이션 없음, 움직임은 값이 바뀔 때만 짧게(동작 줄이기 설정 존중).</li>
+    <li><b>측정값은 판정하지 않는다.</b> 범위 밖이어도 색을 바꾸지 않고, 중립 문구(참고 범위 안/위/아래, 기준 대비 변화)로만 표시.</li>
+    <li><b>참고 범위는 위치만.</b> 게이지·그래프의 옅은 띠로 어디쯤인지 보여 줄 뿐 좋고 나쁨을 칠하지 않음.</li>
+    <li><b>빨강은 두 곳에만.</b> 녹화 중 표시, 삭제·끝내기 같은 되돌리기 어려운 동작.</li>
+    <li><b>카드 하나에 한 가지.</b> 제목 → 설명 → 내용 → 동작(footer).</li>
+    <li><b>숫자는 고정폭.</b> 값이 바뀌어도 폭이 흔들리지 않게 <code>tabular-nums</code>.</li>
+    <li><b>오프라인.</b> 라이브러리·글꼴을 인터넷에서 불러오지 않음(시스템 글꼴 + Apple SD Gothic Neo).</li>
+    <li><b>키보드로도.</b> 모든 버튼·탭·입력에 포커스 테두리, 탭은 ←/→ 키로 이동.</li>
   </ol>
 
-  <h2>색 · 면과 글자</h2>
-  <div class="grid g4" id="sw-surface"></div>
-  <h3>상태 (항상 라벨과 함께)</h3>
-  <div class="grid g4" id="sw-status"></div>
-  <h3>강조 · 그래프 선</h3>
-  <div class="grid g4" id="sw-accent"></div>
-  <p class="rule">숫자는 <b>패널(#1d2935) 위 글자 대비</b>. 일반 글자 4.5:1, 큰 글자(24px 굵게 이상)·그래픽 3:1 이상이 기준입니다. 작은 빨강 글자는 <code>--bad-text</code>를 씁니다.</p>
+  <h2>색</h2>
+  <h3>면과 글자 (Basecoat 다크 토큰)</h3>
+  <div class="grid g4">${sw([
+    ['배경', '--background', THEME.bg, '페이지'], ['카드', '--card', THEME.card, '카드·패널'], ['약한 면', '--muted', THEME.muted, '배지·트랙·탭'],
+    ['테두리', '--border', THEME.border, '구분선'], ['글자', '--foreground', THEME.text, '본문·숫자'], ['보조 글자', '--muted-foreground', THEME.mutedText, '설명·라벨'],
+    ['주 버튼', '--primary', '#e5e5e5', '가장 중요한 동작'], ['위험', '--destructive', '#ff6467', '녹화 중·삭제·끝내기'],
+  ])}</div>
+  <h3>그래프 선 (--chart-*)</h3>
+  <div class="grid g4">${sw([
+    ['속도 · 음높이', '--chart-1', SERIES_COLORS.rate, '선'], ['음량', '--chart-2', SERIES_COLORS.volume, '선'],
+    ['정면 범위 안', '--chart-3', SERIES_COLORS.gazeIn, '시선 띠'], ['참고 범위 띠', '--range-band', 'foreground 22%', '위치 표시'],
+  ])}</div>
 
   <h2>글자</h2>
-  <div id="type"></div>
+  ${[['--fs-clock', '01:24', '답변 중 타이머'], ['--fs-stat', '82%', '관찰 요약 숫자'], ['--fs-metric', '참고 범위 안', '지표 카드 문구'],
+     ['--fs-title', '단계별 결과', '카드 제목'], ['--fs-lead', '● 정면  누적 84%', '시선 알약·안내'], ['--fs-body', '본문, 표, 입력', '본문'], ['--fs-caption', '말하기 속도 · 음절/분', '라벨·도움말(최소)']]
+    .map(([t, txt, use]) => `<div class="typerow"><code>${t}<br><span class="hint">${use}</span></code><div style="font-size:var(${t});font-weight:${t === '--fs-body' || t === '--fs-caption' ? 400 : 700};font-variant-numeric:tabular-nums">${txt}</div></div>`).join('')}
 
   <h2>간격 (4px 단위)</h2>
-  <div class="space" id="space"></div>
+  <div class="space">${[1, 2, 3, 4, 5, 6, 8].map((n) => `<div><i style="width:var(--space-${n});height:var(--space-${n})"></i><small>--space-${n}</small></div>`).join('')}</div>
 
-  <h2>컴포넌트</h2>
-  <h3>지표 패널 — 상태 4가지</h3>
-  <div class="grid g4" id="panels"></div>
-  <p class="rule">구조: <code>.panel.metric[data-status]</code> → 제목(<code>.title</code>) · 보조 숫자(<code>.num</code>) · 상태 단어(<code>.state</code>) · 게이지. 이탈이면 왼쪽 띠와 배경이 함께 바뀝니다.</p>
+  <h2>부품</h2>
+  <h3>상단 바 — topBar()</h3>
+  <div class="card" style="padding:0;overflow:hidden">${topBar({ step: 'practice' })}</div>
 
-  <h3>범위 밴드 게이지 — <code>createGauge()</code></h3>
-  <div class="grid g2">
-    <div class="panel metric" data-status="ok"><div class="title">말하기 속도 (적정)</div><div id="gauge1"></div></div>
-    <div class="panel metric" data-status="bad"><div class="title">목소리 크기 (작음)</div><div id="gauge2"></div></div>
-  </div>
-  <p class="rule">초록 띠 = 적정 범위, 마커 = 현재 값. 값이 없으면 마커를 숨겨 "측정 대기"를 나타냅니다.</p>
-
-  <h3>진행 막대 — <code>createProgress()</code></h3>
-  <div class="grid g3">
-    <div class="panel"><div class="title">남은 시간 충분</div><div id="pb1" style="margin-top:8px"></div></div>
-    <div class="panel"><div class="title">1분 남음</div><div id="pb2" style="margin-top:8px"></div></div>
-    <div class="panel"><div class="title">시간 초과</div><div id="pb3" style="margin-top:8px"></div></div>
-  </div>
-
-  <h3>시선 알약 (카메라 바로 아래)</h3>
-  <div class="row" id="pills"></div>
-  <p class="rule">왼쪽 = 지금 상태, 오른쪽 = 시작부터 누적 정면 비율. 아래 칩이 고개와 눈을 구분합니다.</p>
-
-  <h3>버튼 · 선택 칩</h3>
+  <h3>버튼 — button()</h3>
   <div class="row">
-    <button class="btn primary">연습 시작</button>
-    <button class="btn">다시 측정</button>
-    <button class="btn danger">종료 (Esc)</button>
-    <button class="btn primary" disabled>비활성</button>
-    <button class="chip on">수업 발표</button>
-    <button class="chip">면접 답변</button>
+    ${button({ label: '답변 시작', size: 'lg' })}${button({ label: '같은 질문 다시 답변' })}${button({ label: '이전 답변과 비교', variant: 'outline' })}
+    ${button({ label: '데모로 체험', variant: 'ghost' })}${button({ label: '답변 끝내기 (Esc)', variant: 'destructive' })}
+    ${button({ label: '메모 추가', size: 'sm' })}${button({ label: '비활성', attrs: 'disabled' })}
   </div>
-  <p class="rule">Tab 키로 이동하면 파란 포커스 테두리가 보입니다.</p>
-</main>
 
-<script type="module">
-  import { THEME, STATUS_COLORS, SERIES_COLORS } from './js/config.js';
-  import { createGauge, createProgress } from './js/ui/components.js';
+  <h3>배지 — badge()</h3>
+  <div class="row">${badge({ label: '질문', variant: 'secondary' })}${badge({ label: '고개 정면', variant: 'outline' })}${badge({ label: '● 녹화 중', variant: 'destructive' })}${badge({ label: '기본' })}</div>
 
-  const lum = (h) => { const c = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
-  const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return ((x + 0.05) / (y + 0.05)).toFixed(1); };
-  const sw = (el, list) => { document.getElementById(el).innerHTML = list.map(([name, token, hex, use]) =>
-    `<div class="sw"><div class="chip-c" style="background:var(${token})"></div><div class="meta"><b>${name}</b><code>${token}</code> · ${hex}<br><span>${use} · 대비 ${ratio(hex, THEME.panel)}:1</span></div></div>`).join(''); };
+  <h3>카드 · 입력 — card() field() switchField() segmented()</h3>
+  <div class="grid g2">
+    ${card({ title: '연습할 질문', description: '점수나 자동 평가 없이, 답변을 기록하고 직접 돌아봐요.', html: `<div class="stack">
+      ${field({ label: '질문 또는 답변 주제', forId: 'sg-q', controlHtml: '<textarea class="textarea" id="sg-q" rows="2" placeholder="예: 지원 동기를 말씀해 주세요."></textarea>' })}
+      ${field({ label: '참고 범위 프리셋', controlHtml: segmented({ name: 'sg', value: 'b', options: [{ value: 'a', label: '수업 발표' }, { value: 'b', label: '면접 답변' }, { value: 'c', label: '피칭·공모전' }] }) })}
+      ${field({ label: '답변 시간', controlHtml: '<div class="inline"><input class="input num" value="2"> 분 <input class="input num" value="0"> 초</div>', hint: '시간이 지나도 측정은 계속돼요.' })}</div>`,
+      footerHtml: `${button({ label: '다시 측정', variant: 'outline' })}${button({ label: '답변 시작', size: 'lg' })}` })}
+    ${card({ title: '기록 방식', html: `<div class="stack">${switchField({ id: 'sg-a', label: '답변을 녹화·녹음해서 다시 보기', hint: '이 탭에만 보관돼요.' })}${switchField({ id: 'sg-b', label: '답변 중에는 측정값 숨기기', hint: '복기 때 확인해요.', checked: true })}
+      ${field({ label: '비교할 답변', forId: 'sg-s', controlHtml: '<select class="select" id="sg-s"><option>답변 2 · 오후 1:58</option></select>' })}
+      ${field({ label: '확인할 위치', forId: 'sg-r', controlHtml: '<input class="input" id="sg-r" type="range" min="0" max="100" value="35">' })}</div>` })}
+  </div>
 
-  sw('sw-surface', [
-    ['배경', '--bg', THEME.bg, '페이지'], ['패널', '--panel', THEME.panel, '카드'], ['강조 면', '--panel-2', THEME.panel2, '배지·버튼'],
-    ['영상', '--video', THEME.video, '웹캠 바탕'], ['테두리', '--border', THEME.border, '구분선'], ['글자', '--text', THEME.text, '본문'],
-    ['보조 글자', '--muted', THEME.muted, '설명·라벨'], ['이탈 배경', '--bad-bg', THEME.badBg, '빨강 패널'],
-  ]);
-  sw('sw-status', [
-    ['적정', '--ok', STATUS_COLORS.ok, '정면·적정'], ['주의', '--warn', STATUS_COLORS.warn, '1.5초 이탈·1분 남음'],
-    ['이탈', '--bad', STATUS_COLORS.bad, '채우기·큰 글자'], ['측정 대기', '--idle', STATUS_COLORS.idle, '데이터 없음'],
-  ]);
-  sw('sw-accent', [
-    ['강조', '--accent', THEME.accent, '선택·링크'], ['작은 이탈 글자', '--bad-text', '#ff6b7d', '배지·표'],
-    ['억양 선', '--series-pitch', SERIES_COLORS.pitch, '그래프'], ['크기 선', '--series-volume', SERIES_COLORS.volume, '그래프'],
-  ]);
+  <h3>탭 — tabs() + bindTabs()</h3>
+  <div class="grid g2">${card({ title: '메모', html: tabs({ id: 'sg-memo', selected: 'here', items: [
+    { id: 'here', label: '현재 위치', html: '<p class="hint">0:39 위치에 남긴 메모가 여기에 보여요.</p>' },
+    { id: 'all', label: '전체 복기', html: '<p class="hint">답변 전체에 대한 생각을 적어요.</p>' }] }) })}
+    ${card({ title: '준비 확인 — checklist()', html: checklist([{ key: 'a', title: '카메라를 정면으로 바라보세요' }, { key: 'b', title: '아래 문장을 평소 목소리로 읽어 주세요' }]) + '<div class="progress" style="margin-top:12px"><span style="width:62%"></span></div>' })}</div>
 
-  document.getElementById('type').innerHTML = [
-    ['--fs-display', '04:12', '남은 시간'], ['--fs-score', '84', '리포트 점수'], ['--fs-state', '적정', '상태 단어'],
-    ['--fs-number', '312', '패널 보조 숫자'], ['--fs-title', '시선 처리는 안정적이에요.', '한 줄 결론'], ['--fs-lead', '● 정면  누적 84%', '시선 알약'],
-    ['--fs-body', '본문과 표, 안내 문장', '본문'], ['--fs-small', '목표 270~330 · 기준 대비 −8 dB', '보조 설명'], ['--fs-caption', '말하기 속도', '패널 제목(최소)'],
-  ].map(([t, txt, use]) => `<div class="typerow"><code>${t}<br>${use}</code><div style="font-size:var(${t});font-weight:${t === '--fs-state' || t === '--fs-display' || t === '--fs-score' ? 700 : 600};font-variant-numeric:tabular-nums">${txt}</div></div>`).join('');
+  <h3>관찰 요약 — statGrid() · 표 — dataTable() · 빈 상태 — emptyState()</h3>
+  <div class="grid g3">
+    ${card({ title: '관찰 요약', html: statGrid([{ label: '정면 범위 안', value: '82%', sub: '얼굴 검출 1:52 기준' }, { label: '속도 추정 평균', value: '288', sub: '음절/분' }]) })}
+    ${card({ title: '참고 범위와 다른 구간', html: dataTable({ columns: ['시작', '내용', '길이'], rowsHtml: ['<tr><td>0:34</td><td>정면 범위 밖</td><td>5.0초</td></tr>', '<tr><td>1:36</td><td>기준보다 작은 음량</td><td>18.0초</td></tr>'] }) })}
+    ${card({ className: 'video-card', html: emptyState({ title: '녹화가 없어요', text: '녹화하지 않은 답변입니다.' }) })}
+  </div>
 
-  document.getElementById('space').innerHTML = [1, 2, 3, 4, 5, 6, 8].map((n) =>
-    `<div><div style="width:var(--space-${n});height:var(--space-${n})"></div><small>--space-${n}</small></div>`).join('');
+  <h3>답변 중 표시 — metricCard() · 게이지 · 진행 막대 · 시선 알약</h3>
+  <div class="grid g3">
+    ${metricCard({ id: 'sg-rate', title: '말하기 속도 · 음절/분', numId: 'sg-rate-n', stateId: 'sg-rate-s', extraHtml: '<div id="sg-g1"></div>' })}
+    ${metricCard({ id: 'sg-vol', title: '목소리 크기', numId: 'sg-vol-n', stateId: 'sg-vol-s', extraHtml: '<div id="sg-g2"></div>' })}
+    <div class="card"><section class="stack"><div id="sg-pb"></div><div class="demo-cam"><div class="gaze-head"><div class="gaze-pill"><span class="dot"></span><span>정면</span><span class="cum">누적 84%</span></div></div></div></section></div>
+  </div>`;
 
-  const panel = (st, word, num) => `<div class="panel metric demo-metric" data-status="${st}"><div class="head"><div class="title">말하기 속도</div><div class="num"><b>${num}</b> 음절/분</div></div><div class="state">${word}</div><div class="foot"><span>목표 270~330</span></div></div>`;
-  document.getElementById('panels').innerHTML = panel('ok', '적정', 304) + panel('warn', '빠름', 348) + panel('bad', '빠름', 382) + panel('idle', '측정 대기', '—');
-
-  createGauge(document.getElementById('gauge1'), { min: 180, max: 420, lo: 270, hi: 330, left: '느림', right: '빠름' }).update(304, 'ok');
-  createGauge(document.getElementById('gauge2'), { min: -15, max: 15, lo: -6, hi: 8, left: '작음', right: '큼' }).update(-11, 'bad');
-  createProgress(document.getElementById('pb1')).update(0.35, 'ok');
-  createProgress(document.getElementById('pb2')).update(0.82, 'warn');
-  createProgress(document.getElementById('pb3')).update(1, 'bad');
-
-  const pill = (st, text, cum, cumSt, head, eye) => `<div class="gaze-head" style="position:static;transform:none"><div class="gaze-pill" data-status="${st}"><span class="dot"></span><span>${text}</span><span class="cum" data-status="${cumSt}">누적 ${cum}${cum === "—" ? "" : "%"}</span></div>
-    <div class="gaze-parts"><span data-ok="${head === '정면'}">고개 <b>${head}</b></span><span data-ok="${eye === '정면'}">눈 <b>${eye}</b></span></div></div>`;
-  document.getElementById('pills').innerHTML = pill('ok', '정면', 86, 'ok', '정면', '정면') + pill('warn', '아래쪽을 보고 있어요', 74, 'warn', '정면', '아래쪽') + pill('bad', '왼쪽을 보고 있어요', 61, 'bad', '왼쪽', '정면') + pill('idle', '시선 측정 대기', '—', 'idle', '—', '—');
+  bindTabs(document.getElementById('sg'));
+  document.getElementById('sg-rate-n').textContent = '288'; document.getElementById('sg-rate-s').textContent = '참고 범위 안';
+  document.getElementById('sg-vol-n').textContent = '−4.0 dB'; document.getElementById('sg-vol-s').textContent = '기준 대비 변화';
+  createGauge(document.getElementById('sg-g1'), { min: 180, max: 420, lo: 270, hi: 330, left: '느림', right: '빠름' }).update(288, 'idle');
+  createGauge(document.getElementById('sg-g2'), { min: -15, max: 15, lo: -6, hi: 8, left: '작음', right: '큼' }).update(-4, 'idle');
+  createProgress(document.getElementById('sg-pb')).update(0.35, 'idle');
 </script>
 </body>
 </html>

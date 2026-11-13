@@ -53,6 +53,12 @@ Node 20 이상에서 계산·녹화 수명주기 테스트를 실행합니다. �
 - `?debug=1`: 센서 원시값 표시.
 - 설정 화면의 ‘시선 인식 테스트’: 안내된 방향과 감지값이 일치하는지 장치를 점검합니다. 이 화면의 일치율은 면접 수행 평가가 아닙니다.
 
+## 디자인
+
+- UI는 **Basecoat UI 1.1.0**(shadcn/ui 디자인 언어, React 없음)의 다크 테마를 씁니다. 라이브러리 CSS는 `vendor/basecoat/`에 있어 인터넷 없이 동작합니다.
+- 토큰은 `css/tokens.css`, 화면 배치는 `css/app.css`, 재사용 부품은 `js/ui/components.js`입니다.
+- 기준 문서: `design-system/speechboard/MASTER.md` · 살아 있는 예시: `styleguide.html` (서버 실행 후 `/styleguide.html`)
+
 ## 구조
 
 - `js/analysis/review.js`: 점수 없는 관찰 요약, 공백을 분리한 구간, 시각 기반 표본 조회
