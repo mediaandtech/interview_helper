@@ -14,6 +14,7 @@ const EYE_KEYS = [['down', '눈 아래'], ['up', '눈 위'], ['left', '눈 왼�
 const ANGLE_RANGE = 40;   // 막대 양끝 ±40°
 
 let app, root, raf, sketch, st;
+let generation = 0;
 
 const $ = (id) => root.querySelector(`#${id}`);
 const median = (a) => { const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; };
@@ -199,15 +200,19 @@ function finish() {
 }
 
 async function begin() {
+  const token = generation;
   $('gt-start').hidden = true;
   $('gt-result').hidden = true;
   document.querySelector('.gt-live').hidden = false;
   if (!st.gaze) {
     $('gt-title').textContent = '카메라 켜는 중…';
     try {
-      st.gaze = app.demo ? createDemoGaze() : (app.sensors.gaze && !app.sensors.gaze.demo ? app.sensors.gaze : await initGaze());
+      const acquired = app.demo ? createDemoGaze() : (app.sensors.gaze && !app.sensors.gaze.demo ? app.sensors.gaze : await initGaze());
+      if (token !== generation) { acquired.stop?.(); return; }
+      st.gaze = acquired;
       if (!st.gaze.demo) app.sensors.gaze = st.gaze;
     } catch (reason) {
+      if (token !== generation) return;
       const msg = { denied: '카메라 권한을 허용한 뒤 다시 시작해 주세요.', busy: '다른 앱이 카메라를 쓰고 있어요. 닫고 다시 시작해 주세요.',
         nodevice: '카메라를 찾을 수 없어요.', model: '얼굴 인식 모델을 불러오지 못했어요.' }[reason] ?? '카메라를 열지 못했어요.';
       failStart(msg); return;
@@ -223,6 +228,7 @@ async function begin() {
 }
 
 export function enter(appRef) {
+  generation++;
   app = appRef;
   root = document.getElementById('screen-gazetest');
   root.innerHTML = template();
@@ -257,9 +263,12 @@ function fakeFace(v) {
 }
 
 export function leave() {
+  generation++;
+  st?.gaze?.stop?.();
+  app.sensors.gaze = null;
   cancelAnimationFrame(raf);
   sketch?.remove(); sketch = null;
-  // 데모 카메라는 버리고, 실제 카메라는 연습에서 다시 쓰도록 둠
+  // 점검 화면을 떠나면 카메라를 해제하고, 연습 시 다시 준비 확인합니다.
   root.innerHTML = '';
   root = null;
 }

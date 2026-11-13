@@ -1,10 +1,11 @@
 // p5 인스턴스: 같은 시간축에 쌓은 4줄 그래프(시선 / 속도 / 크기 / 높낮이) + 마우스 툴팁
-import { AUDIO, THEME, STATUS_COLORS, SERIES_COLORS } from '../config.js';
+import { THEME, STATUS_COLORS, SERIES_COLORS } from '../config.js';
+import { nearestSample } from '../analysis/review.js';
 import { formatStamp } from '../util/time.js';
 
 const C = { ok: STATUS_COLORS.ok, okDim: '#1f3a24', warn: STATUS_COLORS.warn, bad: STATUS_COLORS.bad, grid: THEME.border,
   muted: THEME.muted, text: THEME.text, blue: SERIES_COLORS.volume, purple: SERIES_COLORS.pitch, rate: SERIES_COLORS.rate,
-  band: 'rgba(115,191,105,0.12)', panel: THEME.panel };
+  band: 'rgba(87,148,242,0.12)', panel: THEME.panel };
 const LANES = [
   { key: 'gaze', label: '시선', h: 0.6 },
   { key: 'rate', label: '속도', h: 1 },
@@ -17,25 +18,17 @@ const DIR = { down: '아래', up: '위', left: '왼쪽', right: '오른쪽', non
 /**
  * @param {HTMLElement} parentEl
  * @param {object[]} samples
- * @param {object} report  buildReport 결과
+ * @param {object} report  buildReview 결과
  * @param {object} settings
  */
-export function createReportChart(parentEl, samples, report, settings) {
-  const dur = report.durationSec;
+export function createReportChart(parentEl, samples, report, settings, onSeek = () => {}) {
+  const dur = Math.max(0.1, report.durationSec);
   const speakHz = samples.filter((s) => s.hz).map((s) => s.hz).sort((a, b) => a - b);
   const refHz = speakHz.length ? speakHz[Math.floor(speakHz.length / 2)] : 200;
   const rates = samples.map((s) => s.rate).filter((r) => r != null);
   const rateMax = Math.max(settings.rateMax + 80, ...rates);
 
-  // 툴팁 구간: 시선 이벤트는 그 구간, 다른 팁은 시작 후 10초
-  const ranges = [];
-  for (const e of report.gazeEvents) {
-    const tip = report.tips.find((x) => x.t === e.start);
-    ranges.push({ a: e.start, b: e.start + e.dur, text: tip?.text ?? `${formatStamp(e.start)}부터 ${Math.round(e.dur)}초 동안 시선이 벗어났어요.` });
-  }
-  for (const tip of report.tips) {
-    if (tip.t != null && !ranges.some((r) => r.a === tip.t)) ranges.push({ a: tip.t, b: tip.t + 10, text: tip.text });
-  }
+  const ranges = report.intervals.map(e => ({ a: e.start, b: e.start + e.dur, text: e.label }));
 
   return new p5((p) => {
     const size = () => [Math.max(10, parentEl.clientWidth), Math.max(160, parentEl.clientHeight)];
@@ -82,15 +75,15 @@ export function createReportChart(parentEl, samples, report, settings) {
       p.noStroke();
       for (let i = 0; i < samples.length; i++) {
         const s = samples[i];
-        const x = X(s.t), w = Math.max(1, X(samples[i + 1]?.t ?? dur) - x + 0.5);
-        p.fill(s.frontal == null ? C.grid : s.frontal ? C.okDim : C.bad);
+        const x = X(s.t), w = Math.max(1, X(Math.min(samples[i + 1]?.t ?? dur, s.t + 0.1)) - x + 0.5);
+        p.fill(s.frontal == null ? C.grid : s.frontal ? THEME.accent : THEME.muted);
         p.rect(x, g.y + 1, w, g.h - 2);
       }
       // 속도
       band('rate', settings.rateMin, settings.rateMax, 0, rateMax);
       series('rate', (s) => s.rate, 0, rateMax, C.rate);
       // 크기
-      band('vol', AUDIO.okRangeDb[0], AUDIO.okRangeDb[1], -20, 20);
+
       series('vol', (s) => (s.speaking ? s.deltaDb : null), -20, 20, C.blue);
       // 높낮이
       series('pitch', (s) => (s.hz ? 12 * Math.log2(s.hz / refHz) : null), -8, 8, C.purple);
@@ -115,12 +108,15 @@ export function createReportChart(parentEl, samples, report, settings) {
     };
     p.windowResized = () => { const [w, h] = size(); p.resizeCanvas(w, h); rebuild(); };
 
+    p.mousePressed = () => {
+      if (p.mouseX >= LEFT && p.mouseX <= p.width - RIGHT && p.mouseY >= 0 && p.mouseY <= p.height) onSeek((p.mouseX - LEFT) / (p.width - LEFT - RIGHT) * dur);
+    };
     p.draw = () => {
       p.image(staticImg, 0, 0, p.width, p.height);
       const inside = p.mouseX >= LEFT && p.mouseX <= p.width - RIGHT && p.mouseY >= 0 && p.mouseY <= p.height;
       if (!inside || !samples.length) return;
       const t = ((p.mouseX - LEFT) / (p.width - LEFT - RIGHT)) * dur;
-      const s = samples[Math.min(samples.length - 1, Math.max(0, Math.round(t * 10)))];
+      const s = nearestSample(samples, t);
       p.stroke(C.text); p.strokeWeight(1); p.line(p.mouseX, TOP, p.mouseX, p.height - BOTTOM);
 
       const lines = [

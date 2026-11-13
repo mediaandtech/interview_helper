@@ -2,7 +2,7 @@
 import { gaugePercent } from '../util/gauge.js';
 
 /**
- * 범위 밴드 게이지:  왼쪽 라벨 ─── [ 적정 범위 ] ─── 오른쪽 라벨
+ * 범위 밴드 게이지:  왼쪽 라벨 ─── [ 참고 범위 ] ─── 오른쪽 라벨
  * @param {HTMLElement} el  비어 있는 컨테이너
  * @param {{min:number, max:number, lo:number, hi:number, left:string, right:string}} opt
  */
@@ -13,7 +13,7 @@ export function createGauge(el, opt) {
       <div class="g-band"></div>
       <div class="g-mark" hidden></div>
     </div>
-    <div class="g-ends"><span>${opt.left}</span><span>적정</span><span>${opt.right}</span></div>`;
+    <div class="g-ends"><span>${opt.left}</span><span>참고</span><span>${opt.right}</span></div>`;
   const band = el.querySelector('.g-band');
   const mark = el.querySelector('.g-mark');
   const ends = el.querySelectorAll('.g-ends span');

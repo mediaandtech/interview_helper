@@ -2,16 +2,7 @@ import * as setup from './setup.js';
 import * as practice from './practice.js';
 import * as report from './report.js';
 import * as gazetest from './gazetest.js';
-import { THEME, STATUS_COLORS } from '../config.js';
-
-// 디자인 토큰을 CSS 변수로 (색은 config.js 한 곳에서 관리)
-const CSS_VARS = {
-  '--bg': THEME.bg, '--panel': THEME.panel, '--panel-2': THEME.panel2, '--border': THEME.border,
-  '--text': THEME.text, '--muted': THEME.muted, '--accent': THEME.accent, '--accent-bg': THEME.accentBg,
-  '--bad-bg': THEME.badBg, '--video': THEME.video,
-  '--ok': STATUS_COLORS.ok, '--warn': STATUS_COLORS.warn, '--bad': STATUS_COLORS.bad, '--idle': STATUS_COLORS.idle,
-};
-for (const [k, v] of Object.entries(CSS_VARS)) document.documentElement.style.setProperty(k, v);
+// 색·간격 등 디자인 토큰은 css/tokens.css 가 원본입니다(p5 그림용 값은 js/config.js, 테스트로 일치 확인).
 
 const screens = { setup, practice, report, gazetest };
 const ORDER = ['setup', 'practice', 'report'];
@@ -26,7 +17,7 @@ export const app = {
   debug: new URLSearchParams(location.search).has('debug'),
 
   go(name, payload) {
-    if (this.current) screens[this.current].leave?.();
+    if (this.current) screens[this.current].leave?.(name);
     document.querySelectorAll('.screen').forEach((el) => el.classList.toggle('active', el.id === `screen-${name}`));
     const idx = ORDER.indexOf(name);
     document.querySelectorAll('#flow span').forEach((el) => {

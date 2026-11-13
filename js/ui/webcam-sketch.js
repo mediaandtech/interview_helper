@@ -67,7 +67,7 @@ export function createWebcamSketch(parentEl, getState) {
       }
 
       const col = STATUS_COLORS[st.status] ?? STATUS_COLORS.idle;
-      const lm = st.landmarks;
+      const lm = st.hideOverlay ? null : st.landmarks;
       if (lm) {
         const X = (pt) => p.width - (fit.x + pt.x * fit.w);
         const Y = (pt) => fit.y + pt.y * fit.h;
@@ -79,7 +79,7 @@ export function createWebcamSketch(parentEl, getState) {
         // 고개: 코에서 굵은 화살표(정면이면 작은 초록 원)
         const nx = X(lm[NOSE]), ny = Y(lm[NOSE]);
         if (st.head && !st.head.ok) arrow(nx, ny, st.head.dir, L * 0.13, 4, col);
-        else { p.noFill(); p.stroke(STATUS_COLORS.ok); p.strokeWeight(2); p.circle(nx, ny, 12); }
+        else { p.noFill(); p.stroke(st.neutral ? THEME.accent : STATUS_COLORS.ok); p.strokeWeight(2); p.circle(nx, ny, 12); }
         // 눈: 두 눈동자에서 가는 화살표(고개와 구분되는 색)
         if (st.eye && !st.eye.ok && lm[IRIS[0]] && lm[IRIS[1]]) {
           for (const i of IRIS) arrow(X(lm[i]), Y(lm[i]), st.eye.dir, L * 0.05, 2, THEME.accent);

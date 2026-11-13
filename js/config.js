@@ -92,14 +92,14 @@ export const UI = {
   volumeGaugeDb: 15,  // 크기 게이지: 기준 대비 ±15 dB
 };
 
-/** 디자인 토큰 (CSS 변수와 p5 그림이 모두 여기 값을 씀) */
+/** 디자인 토큰 — css/tokens.css 와 같은 값이어야 합니다(p5 그림용). tests/tokens.test.js 가 확인 */
 export const THEME = {
   bg: '#111820',
   panel: '#1d2935',
   panel2: '#243241',
   border: '#2c3b4a',
   text: '#d8dee9',
-  muted: '#8b97a6',
+  muted: '#9aa5b4',   // 보조 글자: 모든 면 위에서 4.5:1 이상
   accent: '#5794f2',
   accentBg: '#16304f',
   badBg: '#3a1d26',
@@ -111,7 +111,7 @@ export const STATUS_COLORS = {
   ok: '#73bf69',
   warn: '#ff9830',
   bad: '#f2495c',
-  idle: '#8b97a6',
+  idle: '#9aa5b4',
 };
 
 /** 그래프 보조색 */

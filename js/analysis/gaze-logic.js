@@ -32,11 +32,12 @@ const NONE = { frontal: false, dir: 'none', head: { ok: false, dir: 'none', yaw:
  */
 export function analyzeGaze(face, calib) {
   if (!face) return NONE;
+  const limits = { ...GAZE, ...calib?.gazeLimits };
   const dy = face.yaw - (calib?.yaw0 ?? 0);
   const dp = face.pitch - (calib?.pitch0 ?? 0);
   let headDir = 'front';
-  if (Math.abs(dy) > GAZE.yawDeg) headDir = dy > 0 ? 'right' : 'left';
-  else if (Math.abs(dp) > GAZE.pitchDeg) headDir = dp > 0 ? 'up' : 'down';
+  if (Math.abs(dy) > limits.yawDeg) headDir = dy > 0 ? 'right' : 'left';
+  else if (Math.abs(dp) > limits.pitchDeg) headDir = dp > 0 ? 'up' : 'down';
 
   const e0 = calib?.eye0 ?? { down: 0, up: 0, left: 0, right: 0 };
   let eyeDir = 'front', max = GAZE.eyeThreshold;
@@ -60,8 +61,9 @@ export function isFrontal(face, calib) {
 export function gazeGrid(face, calib) {
   if (!face) return null;
   const g = analyzeGaze(face, calib);
+  const limits = { ...GAZE, ...calib?.gazeLimits };
   const pick = (d) => ({ left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] }[d] ?? [0, 0]);
-  const [hc, hr] = [Math.sign(Math.trunc(g.head.yaw / GAZE.yawDeg)), -Math.sign(Math.trunc(g.head.pitch / GAZE.pitchDeg))];
+  const [hc, hr] = [Math.sign(Math.trunc(g.head.yaw / limits.yawDeg)), -Math.sign(Math.trunc(g.head.pitch / limits.pitchDeg))];
   const [ec, er] = pick(g.eye.dir);
   return { col: hc || ec, row: hr || er };
 }

@@ -23,17 +23,25 @@ export async function startAudio() {
   } catch (err) {
     throw mediaErrorReason(err);
   }
-  const ctx = new AudioContext();
-  if (ctx.state === 'suspended') await ctx.resume().catch(() => {});
-  const src = ctx.createMediaStreamSource(stream);
-  const analyser = ctx.createAnalyser();
-  analyser.fftSize = AUDIO.fftSize;
-  src.connect(analyser);
+  let ctx, analyser;
+  try {
+    ctx = new AudioContext();
+    if (ctx.state === 'suspended') await ctx.resume().catch(() => {});
+    const src = ctx.createMediaStreamSource(stream);
+    analyser = ctx.createAnalyser();
+    analyser.fftSize = AUDIO.fftSize;
+    src.connect(analyser);
+  } catch (err) {
+    stream.getTracks().forEach(t => t.stop());
+    ctx?.close().catch(() => {});
+    throw mediaErrorReason(err);
+  }
   const buf = new Float32Array(analyser.fftSize);
 
   return {
     stream,
     read(baseDb) {
+      if (!stream.getAudioTracks().some(t => t.readyState === 'live' && !t.muted)) return { db: null, speaking: false, hz: null };
       if (ctx.state === 'suspended') ctx.resume().catch(() => {});
       analyser.getFloatTimeDomainData(buf);
       const db = rmsDb(buf);
@@ -43,7 +51,7 @@ export async function startAudio() {
     },
     stop() {
       stream.getTracks().forEach((t) => t.stop());
-      ctx.close().catch(() => {});
+      if (ctx.state !== 'closed') ctx.close().catch(() => {});
     },
   };
 }

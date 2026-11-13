@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SpeechBoard 디자인 시스템</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* 스타일 가이드 페이지 자체의 배치(앱에는 쓰이지 않음) */
+    body { display: block; overflow: auto; }
+    .sg { max-width: 1180px; margin: 0 auto; padding: var(--space-6) var(--space-4) 80px; }
+    .sg h1 { font-size: 28px; margin: 0 0 var(--space-1); }
+    .sg h2 { font-size: var(--fs-title); margin: var(--space-8) 0 var(--space-3); padding-bottom: var(--space-2); border-bottom: 1px solid var(--border); }
+    .sg h3 { font-size: var(--fs-body); color: var(--muted); margin: var(--space-4) 0 var(--space-2); font-weight: var(--fw-semibold); }
+    .sg p.lead { color: var(--muted); margin: 0 0 var(--space-4); }
+    .sg code { font-family: var(--font-mono); font-size: var(--fs-small); color: var(--accent-text); }
+    .grid { display: grid; gap: var(--space-3); }
+    .g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .sw { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--panel); }
+    .sw .chip-c { height: 54px; }
+    .sw .meta { padding: var(--space-2) var(--space-3); font-size: var(--fs-small); }
+    .sw .meta b { display: block; font-size: var(--fs-body); }
+    .sw .meta span { color: var(--muted); }
+    .typerow { display: grid; grid-template-columns: 170px 1fr; align-items: baseline; gap: var(--space-3); padding: var(--space-2) 0; border-bottom: 1px solid var(--border); }
+    .typerow code { color: var(--muted); }
+    .space { display: flex; align-items: flex-end; gap: var(--space-4); }
+    .space div { background: var(--accent); }
+    .space small { display: block; color: var(--muted); margin-top: var(--space-1); }
+    .demo-metric { height: 180px; }
+    .rule { font-size: var(--fs-small); color: var(--muted); margin-top: var(--space-2); }
+    .row { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; }
+    .principles li { margin: var(--space-1) 0; }
+    @media (max-width: 900px) { .g4, .g3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  </style>
+</head>
+<body>
+<main class="sg">
+  <h1>SpeechBoard 디자인 시스템</h1>
+  <p class="lead">발표 중 <b>1초 안에</b> 내 상태를 읽을 수 있게 만드는 그라파나 계열 다크 대시보드. 이 페이지는 실제 앱과 같은 <code>css/tokens.css</code>·<code>css/style.css</code>·<code>js/ui/components.js</code>로 그려집니다.</p>
+
+  <h2>원칙</h2>
+  <ol class="principles">
+    <li><b>숫자보다 상태가 먼저.</b> 큰 글자는 상태 단어(적정/빠름), 숫자는 오른쪽 위에 작게.</li>
+    <li><b>패널 하나에 핵심 하나.</b> 제목 → 상태 → 기준이 보이는 게이지/그래프 → 보조 정보.</li>
+    <li><b>색은 의미에만.</b> 초록=적정, 주황=주의, 빨강=이탈, 회색=측정 대기. 장식용 색 없음.</li>
+    <li><b>색만으로 말하지 않기.</b> 모든 상태색에는 글자 라벨이 함께 붙습니다.</li>
+    <li><b>깜빡이지 않기.</b> 상태는 1초 유지돼야 바뀜(시선은 1.5초 주황 / 3초 빨강 / 복귀 0.5초).</li>
+    <li><b>프로젝터에서도 읽히게.</b> 상태 단어 최소 28px, 남은 시간 최소 34px, 1280×720에서 가로 스크롤 없음.</li>
+    <li><b>장식 최소.</b> 그림자·그라데이션 없음, 움직임은 값이 바뀔 때만 짧게(동작 줄이기 설정 존중).</li>
+  </ol>
+
+  <h2>색 · 면과 글자</h2>
+  <div class="grid g4" id="sw-surface"></div>
+  <h3>상태 (항상 라벨과 함께)</h3>
+  <div class="grid g4" id="sw-status"></div>
+  <h3>강조 · 그래프 선</h3>
+  <div class="grid g4" id="sw-accent"></div>
+  <p class="rule">숫자는 <b>패널(#1d2935) 위 글자 대비</b>. 일반 글자 4.5:1, 큰 글자(24px 굵게 이상)·그래픽 3:1 이상이 기준입니다. 작은 빨강 글자는 <code>--bad-text</code>를 씁니다.</p>
+
+  <h2>글자</h2>
+  <div id="type"></div>
+
+  <h2>간격 (4px 단위)</h2>
+  <div class="space" id="space"></div>
+
+  <h2>컴포넌트</h2>
+  <h3>지표 패널 — 상태 4가지</h3>
+  <div class="grid g4" id="panels"></div>
+  <p class="rule">구조: <code>.panel.metric[data-status]</code> → 제목(<code>.title</code>) · 보조 숫자(<code>.num</code>) · 상태 단어(<code>.state</code>) · 게이지. 이탈이면 왼쪽 띠와 배경이 함께 바뀝니다.</p>
+
+  <h3>범위 밴드 게이지 — <code>createGauge()</code></h3>
+  <div class="grid g2">
+    <div class="panel metric" data-status="ok"><div class="title">말하기 속도 (적정)</div><div id="gauge1"></div></div>
+    <div class="panel metric" data-status="bad"><div class="title">목소리 크기 (작음)</div><div id="gauge2"></div></div>
+  </div>
+  <p class="rule">초록 띠 = 적정 범위, 마커 = 현재 값. 값이 없으면 마커를 숨겨 "측정 대기"를 나타냅니다.</p>
+
+  <h3>진행 막대 — <code>createProgress()</code></h3>
+  <div class="grid g3">
+    <div class="panel"><div class="title">남은 시간 충분</div><div id="pb1" style="margin-top:8px"></div></div>
+    <div class="panel"><div class="title">1분 남음</div><div id="pb2" style="margin-top:8px"></div></div>
+    <div class="panel"><div class="title">시간 초과</div><div id="pb3" style="margin-top:8px"></div></div>
+  </div>
+
+  <h3>시선 알약 (카메라 바로 아래)</h3>
+  <div class="row" id="pills"></div>
+  <p class="rule">왼쪽 = 지금 상태, 오른쪽 = 시작부터 누적 정면 비율. 아래 칩이 고개와 눈을 구분합니다.</p>
+
+  <h3>버튼 · 선택 칩</h3>
+  <div class="row">
+    <button class="btn primary">연습 시작</button>
+    <button class="btn">다시 측정</button>
+    <button class="btn danger">종료 (Esc)</button>
+    <button class="btn primary" disabled>비활성</button>
+    <button class="chip on">수업 발표</button>
+    <button class="chip">면접 답변</button>
+  </div>
+  <p class="rule">Tab 키로 이동하면 파란 포커스 테두리가 보입니다.</p>
+</main>
+
+<script type="module">
+  import { THEME, STATUS_COLORS, SERIES_COLORS } from './js/config.js';
+  import { createGauge, createProgress } from './js/ui/components.js';
+
+  const lum = (h) => { const c = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+  const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return ((x + 0.05) / (y + 0.05)).toFixed(1); };
+  const sw = (el, list) => { document.getElementById(el).innerHTML = list.map(([name, token, hex, use]) =>
+    `<div class="sw"><div class="chip-c" style="background:var(${token})"></div><div class="meta"><b>${name}</b><code>${token}</code> · ${hex}<br><span>${use} · 대비 ${ratio(hex, THEME.panel)}:1</span></div></div>`).join(''); };
+
+  sw('sw-surface', [
+    ['배경', '--bg', THEME.bg, '페이지'], ['패널', '--panel', THEME.panel, '카드'], ['강조 면', '--panel-2', THEME.panel2, '배지·버튼'],
+    ['영상', '--video', THEME.video, '웹캠 바탕'], ['테두리', '--border', THEME.border, '구분선'], ['글자', '--text', THEME.text, '본문'],
+    ['보조 글자', '--muted', THEME.muted, '설명·라벨'], ['이탈 배경', '--bad-bg', THEME.badBg, '빨강 패널'],
+  ]);
+  sw('sw-status', [
+    ['적정', '--ok', STATUS_COLORS.ok, '정면·적정'], ['주의', '--warn', STATUS_COLORS.warn, '1.5초 이탈·1분 남음'],
+    ['이탈', '--bad', STATUS_COLORS.bad, '채우기·큰 글자'], ['측정 대기', '--idle', STATUS_COLORS.idle, '데이터 없음'],
+  ]);
+  sw('sw-accent', [
+    ['강조', '--accent', THEME.accent, '선택·링크'], ['작은 이탈 글자', '--bad-text', '#ff6b7d', '배지·표'],
+    ['억양 선', '--series-pitch', SERIES_COLORS.pitch, '그래프'], ['크기 선', '--series-volume', SERIES_COLORS.volume, '그래프'],
+  ]);
+
+  document.getElementById('type').innerHTML = [
+    ['--fs-display', '04:12', '남은 시간'], ['--fs-score', '84', '리포트 점수'], ['--fs-state', '적정', '상태 단어'],
+    ['--fs-number', '312', '패널 보조 숫자'], ['--fs-title', '시선 처리는 안정적이에요.', '한 줄 결론'], ['--fs-lead', '● 정면  누적 84%', '시선 알약'],
+    ['--fs-body', '본문과 표, 안내 문장', '본문'], ['--fs-small', '목표 270~330 · 기준 대비 −8 dB', '보조 설명'], ['--fs-caption', '말하기 속도', '패널 제목(최소)'],
+  ].map(([t, txt, use]) => `<div class="typerow"><code>${t}<br>${use}</code><div style="font-size:var(${t});font-weight:${t === '--fs-state' || t === '--fs-display' || t === '--fs-score' ? 700 : 600};font-variant-numeric:tabular-nums">${txt}</div></div>`).join('');
+
+  document.getElementById('space').innerHTML = [1, 2, 3, 4, 5, 6, 8].map((n) =>
+    `<div><div style="width:var(--space-${n});height:var(--space-${n})"></div><small>--space-${n}</small></div>`).join('');
+
+  const panel = (st, word, num) => `<div class="panel metric demo-metric" data-status="${st}"><div class="head"><div class="title">말하기 속도</div><div class="num"><b>${num}</b> 음절/분</div></div><div class="state">${word}</div><div class="foot"><span>목표 270~330</span></div></div>`;
+  document.getElementById('panels').innerHTML = panel('ok', '적정', 304) + panel('warn', '빠름', 348) + panel('bad', '빠름', 382) + panel('idle', '측정 대기', '—');
+
+  createGauge(document.getElementById('gauge1'), { min: 180, max: 420, lo: 270, hi: 330, left: '느림', right: '빠름' }).update(304, 'ok');
+  createGauge(document.getElementById('gauge2'), { min: -15, max: 15, lo: -6, hi: 8, left: '작음', right: '큼' }).update(-11, 'bad');
+  createProgress(document.getElementById('pb1')).update(0.35, 'ok');
+  createProgress(document.getElementById('pb2')).update(0.82, 'warn');
+  createProgress(document.getElementById('pb3')).update(1, 'bad');
+
+  const pill = (st, text, cum, cumSt, head, eye) => `<div class="gaze-head" style="position:static;transform:none"><div class="gaze-pill" data-status="${st}"><span class="dot"></span><span>${text}</span><span class="cum" data-status="${cumSt}">누적 ${cum}${cum === "—" ? "" : "%"}</span></div>
+    <div class="gaze-parts"><span data-ok="${head === '정면'}">고개 <b>${head}</b></span><span data-ok="${eye === '정면'}">눈 <b>${eye}</b></span></div></div>`;
+  document.getElementById('pills').innerHTML = pill('ok', '정면', 86, 'ok', '정면', '정면') + pill('warn', '아래쪽을 보고 있어요', 74, 'warn', '정면', '아래쪽') + pill('bad', '왼쪽을 보고 있어요', 61, 'bad', '왼쪽', '정면') + pill('idle', '시선 측정 대기', '—', 'idle', '—', '—');
+</script>
+</body>
+</html>

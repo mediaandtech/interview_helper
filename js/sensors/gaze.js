@@ -38,7 +38,7 @@ export async function initGaze() {
   video.muted = true;
   video.playsInline = true;
   video.srcObject = stream;
-  await video.play();
+  try { await video.play(); } catch { stream.getTracks().forEach(t => t.stop()); throw 'error'; }
 
   let landmarker;
   try {
@@ -57,6 +57,7 @@ export async function initGaze() {
   return {
     video,
     detect(nowMs) {
+      if (!stream.getVideoTracks().some(t => t.readyState === 'live' && !t.muted)) return { face: null, landmarks: null };
       if (video.readyState < 2 || video.currentTime === lastVideoTime) return last;
       lastVideoTime = video.currentTime;
       const ts = Math.max(nowMs, lastTs + 1);
