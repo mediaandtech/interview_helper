@@ -7,13 +7,13 @@ export const DEMO_SCENES = [
   { name: 'normal',    sec: 8, label: '정상 발표' },
   { name: 'lookDown',  sec: 6, label: '원고 보기(고개 숙임)', pitch: -22 },
   { name: 'quiet',     sec: 7, label: '목소리 작아짐', level: -11 },
-  { name: 'fast',      sec: 7, label: '말이 빨라짐', rate: 6.8 },
+  { name: 'fast',      sec: 12, label: '말이 빨라짐', rate: 6.8 },
   { name: 'eyesRight', sec: 5, label: '눈만 옆으로', eye: { right: 0.85 } },
   { name: 'monotone',  sec: 7, label: '억양 단조', pitchVar: 0.25 },
   { name: 'pause',     sec: 4, label: '잠시 쉼', silent: true },
   { name: 'headLeft',  sec: 5, label: '고개 돌림', yaw: -24 },
   { name: 'loud',      sec: 6, label: '목소리 커짐', level: 11 },
-  { name: 'slow',      sec: 7, label: '말이 느려짐', rate: 3.6 },
+  { name: 'slow',      sec: 12, label: '말이 느려짐', rate: 3.6 },
 ];
 const TOTAL = DEMO_SCENES.reduce((a, s) => a + s.sec, 0);
 const BASE = { rate: 5, level: 0, pitchVar: 2.5, yaw: 0, pitch: 0, eye: {}, silent: false };

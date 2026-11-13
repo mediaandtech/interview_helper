@@ -1,6 +1,6 @@
 // ③ 리포트 화면
 import { PRESETS } from '../config.js';
-import { formatClock } from '../util/time.js';
+import { formatClock, formatStamp } from '../util/time.js';
 import { buildReport } from '../analysis/scoring.js';
 import { classifyRate } from '../analysis/classify.js';
 import { createReportChart } from './report-sketch.js';
@@ -47,6 +47,15 @@ function statCells(r, settings) {
   ].join('');
 }
 
+const ISSUE_METRIC = { gaze: '시선', volume: '크기', rate: '속도' };
+
+function issuesTable(issues) {
+  if (!issues.length) return `<div class="panel issues"><div class="title">이탈 구간</div><p class="sub">기준을 벗어난 구간이 없어요.</p></div>`;
+  const rows = issues.map((i) => `<tr data-metric="${i.metric}"><td>${formatStamp(i.start)}</td><td><span class="tag">${ISSUE_METRIC[i.metric]}</span>${i.label}</td><td>${Math.round(i.dur)}초</td></tr>`).join('');
+  return `<div class="panel issues"><div class="title">이탈 구간 <span class="sub-inline">· 시작 시각과 지속 시간</span></div>
+    <table><thead><tr><th>시작</th><th>내용</th><th>지속</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
 function template(r, settings, prev = []) {
   const date = new Date().toLocaleDateString('ko-KR');
   const meta = `${PRESETS[settings.presetKey]?.label ?? ''} · 목표 ${formatClock(settings.durationSec)} / 실제 ${formatClock(r.durationSec)} · ${date}`;
@@ -70,9 +79,12 @@ function template(r, settings, prev = []) {
       <div class="chart" id="report-chart"></div>
     </div>
     ${historyTable(prev, r)}
+    <div class="report-row">
+    ${issuesTable(r.issues)}
     <div class="panel tips">
       <div class="title">다음 연습에서 고칠 것</div>
       <ol>${tips}</ol>
+    </div>
     </div>
     <div class="report-actions">
       <button class="btn primary" data-act="retry">다시 연습</button>

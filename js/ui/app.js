@@ -1,6 +1,16 @@
 import * as setup from './setup.js';
 import * as practice from './practice.js';
 import * as report from './report.js';
+import { THEME, STATUS_COLORS } from '../config.js';
+
+// 디자인 토큰을 CSS 변수로 (색은 config.js 한 곳에서 관리)
+const CSS_VARS = {
+  '--bg': THEME.bg, '--panel': THEME.panel, '--panel-2': THEME.panel2, '--border': THEME.border,
+  '--text': THEME.text, '--muted': THEME.muted, '--accent': THEME.accent, '--accent-bg': THEME.accentBg,
+  '--bad-bg': THEME.badBg, '--video': THEME.video,
+  '--ok': STATUS_COLORS.ok, '--warn': STATUS_COLORS.warn, '--bad': STATUS_COLORS.bad, '--idle': STATUS_COLORS.idle,
+};
+for (const [k, v] of Object.entries(CSS_VARS)) document.documentElement.style.setProperty(k, v);
 
 const screens = { setup, practice, report };
 const ORDER = ['setup', 'practice', 'report'];
@@ -9,6 +19,7 @@ const ORDER = ['setup', 'practice', 'report'];
 export const app = {
   settings: null,      // Settings (setup이 채움)
   sensors: { audio: null, gaze: null },
+  demo: new URLSearchParams(location.search).has('demo'),
   lastSamples: [],
   current: null,
   debug: new URLSearchParams(location.search).has('debug'),

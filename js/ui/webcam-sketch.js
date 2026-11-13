@@ -1,16 +1,21 @@
-// p5 인스턴스: 좌우 반전된 웹캠 영상 + 얼굴 점 + 시선 방향 화살표
-const COLORS = { ok: '#73bf69', warn: '#ff9830', bad: '#f2495c', idle: '#8e8e9e' };
+// p5 인스턴스: 좌우 반전된 웹캠 영상 + 얼굴 점(옅게) + 고개 화살표(굵게) + 눈 방향(작게)
+// 얼굴 위 그래픽은 최소한으로: 고개 방향 1개, 눈 방향 2개, 점은 1/4만.
+import { STATUS_COLORS, THEME } from '../config.js';
+
 const NOSE = 1;
-const ARROW = { left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] };
+const IRIS = [468, 473];
+const VEC = { left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] };
+const VIRTUAL = { w: 640, h: 480 }; // 영상이 없을 때(데모) 기준 크기
 
 /**
  * @param {HTMLElement} parentEl
- * @param {() => { video: HTMLVideoElement|null, landmarks: {x,y}[]|null, status: string, dir: string }} getState
+ * @param {() => {
+ *   video: HTMLVideoElement|null, landmarks: {x,y}[]|null, status: string,
+ *   head?: {ok:boolean, dir:string}, eye?: {ok:boolean, dir:string},
+ *   grid?: {col:number,row:number}|null, demo?: boolean }} getState
  */
 export function createWebcamSketch(parentEl, getState) {
   return new p5((p) => {
-    let fit = { x: 0, y: 0, w: 0, h: 0 };
-
     const size = () => [Math.max(10, parentEl.clientWidth), Math.max(10, parentEl.clientHeight)];
 
     p.setup = () => {
@@ -19,47 +24,67 @@ export function createWebcamSketch(parentEl, getState) {
       p.pixelDensity(Math.min(2, window.devicePixelRatio || 1));
       p.frameRate(30);
     };
-
     p.windowResized = () => { const [w, h] = size(); p.resizeCanvas(w, h); };
+
+    function arrow(x, y, dir, len, weight, col) {
+      const v = VEC[dir];
+      if (!v) return;
+      const tx = x + v[0] * len, ty = y + v[1] * len;
+      p.stroke(col); p.strokeWeight(weight); p.line(x, y, tx, ty);
+      p.push(); p.translate(tx, ty); p.rotate(Math.atan2(v[1], v[0]));
+      p.noStroke(); p.fill(col); p.triangle(0, 0, -weight * 3.2, -weight * 2, -weight * 3.2, weight * 2); p.pop();
+    }
+
+    function drawGrid(cell) {
+      const s = 54, x0 = p.width - s - 12, y0 = 36;
+      p.noFill(); p.stroke(THEME.border); p.strokeWeight(1);
+      for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) p.rect(x0 + (i * s) / 3, y0 + (j * s) / 3, s / 3, s / 3);
+      if (cell) {
+        p.noStroke(); p.fill(cell.col === 0 && cell.row === 0 ? STATUS_COLORS.ok : STATUS_COLORS.bad);
+        p.rect(x0 + ((cell.col + 1) * s) / 3 + 2, y0 + ((cell.row + 1) * s) / 3 + 2, s / 3 - 4, s / 3 - 4);
+      }
+      p.noStroke(); p.fill(THEME.muted); p.textSize(10); p.textAlign(p.CENTER, p.TOP); p.text('3×3 시선', x0 + s / 2, y0 + s + 3);
+    }
 
     p.draw = () => {
       const st = getState();
-      p.background('#0b0c0e');
+      p.background(THEME.video);
       const v = st.video;
+      const vw = v?.videoWidth || VIRTUAL.w, vh = v?.videoHeight || VIRTUAL.h;
+      const sc = Math.max(p.width / vw, p.height / vh);
+      const fit = { w: vw * sc, h: vh * sc };
+      fit.x = (p.width - fit.w) / 2; fit.y = (p.height - fit.h) / 2;
+
       if (v && v.videoWidth) {
-        // 영역을 꽉 채우도록(cover) 맞춘 뒤 좌우 반전해서 그림
-        const s = Math.max(p.width / v.videoWidth, p.height / v.videoHeight);
-        fit = { w: v.videoWidth * s, h: v.videoHeight * s };
-        fit.x = (p.width - fit.w) / 2; fit.y = (p.height - fit.h) / 2;
         const ctx = p.drawingContext;
-        ctx.save();
-        ctx.translate(p.width, 0); ctx.scale(-1, 1);
+        ctx.save(); ctx.translate(p.width, 0); ctx.scale(-1, 1);
         ctx.drawImage(v, fit.x, fit.y, fit.w, fit.h);
         ctx.restore();
-      } else {
-        p.noStroke(); p.fill('#8e8e9e'); p.textAlign(p.CENTER, p.CENTER); p.textSize(14);
-        p.text('카메라를 사용할 수 없어요', p.width / 2, p.height / 2);
+      } else if (!st.demo) {
+        p.noStroke(); p.fill(THEME.muted); p.textAlign(p.CENTER, p.CENTER); p.textSize(14);
+        p.text('카메라를 사용할 수 없어요 · 시선 측정 대기', p.width / 2, p.height / 2);
       }
 
-      const col = COLORS[st.status] ?? COLORS.idle;
-      if (st.landmarks) {
-        const X = (pt) => p.width - (fit.x + pt.x * fit.w); // 반전
+      const col = STATUS_COLORS[st.status] ?? STATUS_COLORS.idle;
+      const lm = st.landmarks;
+      if (lm) {
+        const X = (pt) => p.width - (fit.x + pt.x * fit.w);
         const Y = (pt) => fit.y + pt.y * fit.h;
-        p.noStroke();
-        const c = p.color(col); c.setAlpha(110); p.fill(c);
-        for (let i = 0; i < st.landmarks.length; i += 2) p.circle(X(st.landmarks[i]), Y(st.landmarks[i]), 2);
+        const dot = p.color(col); dot.setAlpha(st.demo ? 150 : 90);
+        p.noStroke(); p.fill(dot);
+        for (let i = 0; i < lm.length; i += st.demo ? 1 : 4) p.circle(X(lm[i]), Y(lm[i]), st.demo ? 3 : 2);
 
-        const a = ARROW[st.dir];
-        if (a) {
-          const nx = X(st.landmarks[NOSE]), ny = Y(st.landmarks[NOSE]);
-          const L = Math.min(p.width, p.height) * 0.12;
-          const tx = nx + a[0] * L, ty = ny + a[1] * L;
-          p.stroke(col); p.strokeWeight(3);
-          p.line(nx, ny, tx, ty);
-          p.push(); p.translate(tx, ty); p.rotate(Math.atan2(a[1], a[0]));
-          p.noStroke(); p.fill(col); p.triangle(0, 0, -10, -6, -10, 6); p.pop();
+        const L = Math.min(p.width, p.height);
+        // 고개: 코에서 굵은 화살표(정면이면 작은 초록 원)
+        const nx = X(lm[NOSE]), ny = Y(lm[NOSE]);
+        if (st.head && !st.head.ok) arrow(nx, ny, st.head.dir, L * 0.13, 4, col);
+        else { p.noFill(); p.stroke(STATUS_COLORS.ok); p.strokeWeight(2); p.circle(nx, ny, 12); }
+        // 눈: 두 눈동자에서 가는 화살표(고개와 구분되는 색)
+        if (st.eye && !st.eye.ok && lm[IRIS[0]] && lm[IRIS[1]]) {
+          for (const i of IRIS) arrow(X(lm[i]), Y(lm[i]), st.eye.dir, L * 0.05, 2, THEME.accent);
         }
       }
+      if (st.grid !== undefined) drawGrid(st.grid);
     };
   });
 }

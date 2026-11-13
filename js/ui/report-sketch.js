@@ -1,9 +1,10 @@
 // p5 인스턴스: 같은 시간축에 쌓은 4줄 그래프(시선 / 속도 / 크기 / 높낮이) + 마우스 툴팁
-import { AUDIO } from '../config.js';
+import { AUDIO, THEME, STATUS_COLORS, SERIES_COLORS } from '../config.js';
 import { formatStamp } from '../util/time.js';
 
-const C = { ok: '#73bf69', okDim: '#1f3a24', warn: '#ff9830', bad: '#f2495c', grid: '#2a2d35', muted: '#8e8e9e',
-  text: '#ccccdc', blue: '#5794f2', purple: '#b877d9', band: 'rgba(115,191,105,0.10)', panel: '#181b1f' };
+const C = { ok: STATUS_COLORS.ok, okDim: '#1f3a24', warn: STATUS_COLORS.warn, bad: STATUS_COLORS.bad, grid: THEME.border,
+  muted: THEME.muted, text: THEME.text, blue: SERIES_COLORS.volume, purple: SERIES_COLORS.pitch, rate: SERIES_COLORS.rate,
+  band: 'rgba(115,191,105,0.12)', panel: THEME.panel };
 const LANES = [
   { key: 'gaze', label: '시선', h: 0.6 },
   { key: 'rate', label: '속도', h: 1 },
@@ -87,7 +88,7 @@ export function createReportChart(parentEl, samples, report, settings) {
       }
       // 속도
       band('rate', settings.rateMin, settings.rateMax, 0, rateMax);
-      series('rate', (s) => s.rate, 0, rateMax, C.ok);
+      series('rate', (s) => s.rate, 0, rateMax, C.rate);
       // 크기
       band('vol', AUDIO.okRangeDb[0], AUDIO.okRangeDb[1], -20, 20);
       series('vol', (s) => (s.speaking ? s.deltaDb : null), -20, 20, C.blue);

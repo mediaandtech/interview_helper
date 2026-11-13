@@ -4,6 +4,7 @@ import { calibrateVoice } from '../analysis/audio-math.js';
 import { startAudio } from '../sensors/audio.js';
 import { initGaze } from '../sensors/gaze.js';
 import { createWebcamSketch } from './webcam-sketch.js';
+import { createDemoAudio, createDemoGaze, DEMO_CALIB } from '../sensors/demo.js';
 import { debugLine } from './app.js';
 
 const READ_TEXT = '안녕하세요, 지금부터 발표를 시작하겠습니다.';
@@ -70,6 +71,7 @@ function template() {
         </div>
       </div>
       <button class="btn primary start" id="start" disabled>연습 시작</button>
+      <button class="btn demo-start" id="demo-start" title="카메라·마이크 없이 가상 데이터로 모든 상태를 보여 줍니다">데모 데이터로 체험하기</button>
     </div>
   </div>`;
 }
@@ -118,7 +120,21 @@ function updateStart() {
   btn.textContent = missing.length ? `${missing.join('·')} 없이 연습 시작` : '연습 시작';
 }
 
+function stopDemoSensors() {
+  // 데모 센서가 남아 있으면 실제 센서를 새로 엽니다
+  if (app.sensors.audio?.demo) app.sensors.audio = null;
+  if (app.sensors.gaze?.demo) app.sensors.gaze = null;
+}
+
+function startDemo() {
+  for (const k of ['audio', 'gaze']) if (app.sensors[k] && !app.sensors[k].demo) app.sensors[k].stop();
+  app.sensors = { audio: createDemoAudio(), gaze: createDemoGaze() };
+  app.settings = { ...readForm(), calib: { ...DEMO_CALIB } };
+  app.go('practice');
+}
+
 async function openSensors() {
+  stopDemoSensors();
   const [a, g] = await Promise.allSettled([
     app.sensors.audio ? Promise.resolve(app.sensors.audio) : startAudio(),
     app.sensors.gaze ? Promise.resolve(app.sensors.gaze) : initGaze(),
@@ -207,6 +223,8 @@ export function enter(appRef) {
 
   root.querySelectorAll('.chip').forEach((c) => c.addEventListener('click', () => applyPreset(c.dataset.preset)));
   root.querySelector('#calib-run').addEventListener('click', runCalibration);
+  root.querySelector('#demo-start').addEventListener('click', startDemo);
+  if (app.demo && !app.demoAutoStarted) { app.demoAutoStarted = true; startDemo(); return; } // ?demo=1
   root.querySelector('#start').addEventListener('click', () => {
     const c = state.calib;
     app.settings = { ...readForm(), calib: {
