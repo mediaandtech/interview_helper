@@ -26,7 +26,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
  if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)) throw Error('mobile setup overflow');
  await page.locator('#demo-start').click();
  await page.getByRole('button',{name:'답변 끝내기 (Esc)'}).click();
- await page.locator('#reflection').waitFor();
+ await page.locator('#review-time').waitFor(); // 복기 화면 도착 신호(#reflection 은 '전체 복기' 탭 안이라 숨겨져 있음)
  if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)) throw Error('mobile report overflow');
  await page.screenshot({path:'/tmp/speechboard-review-mobile.png',fullPage:true});
  // Exercise native MediaRecorder with synthetic media; never access the user's devices.
