@@ -314,6 +314,21 @@ export function enter(appRef) {
   stop.addEventListener('click', finish);
   document.getElementById('topbar-right').append(stop);
 
+  // 데모 중에는 실제 카메라로 바로 넘어갈 수 있게
+  if (app.sensors.audio?.demo || app.sensors.gaze?.demo) {
+    const real = document.createElement('button');
+    real.className = 'btn';
+    real.textContent = '실제 카메라로 전환';
+    real.addEventListener('click', () => {
+      app.demo = false;
+      app.sensors = { audio: null, gaze: null };
+      const url = new URL(location.href); url.searchParams.delete('demo'); history.replaceState(null, '', url);
+      if (s) s.phase = 'done';
+      app.go('setup');
+    });
+    stop.before(real);
+  }
+
   keyHandler = (e) => {
     if (e.key === 'Escape' || e.code === 'Space') { e.preventDefault(); finish(); }
   };

@@ -85,6 +85,12 @@ export function createWebcamSketch(parentEl, getState) {
           for (const i of IRIS) arrow(X(lm[i]), Y(lm[i]), st.eye.dir, L * 0.05, 2, THEME.accent);
         }
       }
+      if (st.demo) {
+        p.noStroke(); p.fill(THEME.accent); p.textAlign(p.CENTER, p.BOTTOM); p.textSize(16); p.textStyle(p.BOLD);
+        p.text('데모 모드 · 가상 얼굴입니다', p.width / 2, p.height - 34);
+        p.fill(THEME.muted); p.textSize(12); p.textStyle(p.NORMAL);
+        p.text('내 얼굴로 연습하려면 위쪽 [실제 카메라로 전환]을 누르세요', p.width / 2, p.height - 14);
+      }
       if (st.grid !== undefined) drawGrid(st.grid);
     };
   });
