@@ -97,3 +97,49 @@ main { flex: 1; min-height: 0; position: relative; }
   background: rgba(0,0,0,.75); color: #9fe; font: 11px/1.4 ui-monospace, monospace;
   padding: 6px 8px; border-radius: 3px; white-space: pre; pointer-events: none;
 }
+
+/* ===== ① 설정 화면 ===== */
+.setup {
+  height: 100%; padding: 16px; overflow: auto;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px;
+  max-width: 1200px; margin: 0 auto;
+}
+.setup-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.card { border-left-color: var(--border); padding: 14px 16px; }
+.card .title { margin-bottom: 8px; }
+.card .sub { margin-top: 8px; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip {
+  background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 3px;
+  padding: 8px 14px; cursor: pointer;
+}
+.chip.on { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+.time-input { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--muted); }
+.time-input input, .advanced input {
+  background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 3px;
+  font: 600 24px/1 var(--font); width: 72px; padding: 6px 8px; text-align: right;
+}
+.advanced input { font-size: 14px; width: 64px; }
+.advanced summary { cursor: pointer; margin: 0; }
+.advanced label { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; color: var(--muted); }
+.privacy { color: var(--muted); font-size: 12px; margin: 0 4px; }
+.preview { height: 200px; border-radius: 3px; overflow: hidden; background: #0b0c0e; margin-bottom: 10px; }
+.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.steps li { display: flex; gap: 10px; align-items: flex-start; color: var(--muted); }
+.steps li b { font-weight: 600; }
+.steps .mark {
+  flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--panel-2); font-size: 12px; font-weight: 700; color: var(--muted);
+}
+.steps li.active { color: var(--text); }
+.steps li.active .mark { background: var(--accent); color: #111; }
+.steps li.done { color: var(--text); }
+.steps li.done .mark { background: var(--ok); color: #111; }
+.steps li.fail .mark { background: var(--warn); color: #111; }
+.steps li.fail .hint { color: var(--warn); }
+.steps li.done .hint { color: var(--ok); }
+.hint { font-size: 12px; margin-top: 2px; }
+.read-text { margin-top: 4px; padding: 6px 10px; background: var(--bg); border-radius: 3px; color: var(--text); }
+.progress { height: 3px; background: var(--bg); border-radius: 2px; margin: 12px 0 10px; overflow: hidden; }
+.progress > div { height: 100%; width: 0; background: var(--accent); transition: width .1s linear; }
+.start { padding: 12px; font-size: 15px; }
