@@ -136,8 +136,13 @@ export function buildReport(samples, settings, extras = {}) {
   }
 
   cands.sort((a, b) => b.sev - a.sev);
-  const tips = cands.slice(0, 3).map(({ t, text }) => ({ t, text }));
-  const mentioned = new Set(cands.slice(0, 3).map((c) => c.key));
+  const top = cands.slice(0, 3);
+  // 시선이 주인공: 긴 시선 이탈이 있으면 반드시 하나는 포함
+  const topGaze = cands.find((c) => c.key === 'gaze');
+  if (topGaze && !top.includes(topGaze)) top[top.length === 3 ? 2 : top.length] = topGaze;
+  top.sort((a, b) => (a.t ?? Infinity) - (b.t ?? Infinity));
+  const tips = top.map(({ t, text }) => ({ t, text }));
+  const mentioned = new Set(top.map((c) => c.key));
   const byScore = [...present].sort((a, b) => metrics[b].score - metrics[a].score);
   for (const k of byScore) {
     if (tips.length >= 3) break;

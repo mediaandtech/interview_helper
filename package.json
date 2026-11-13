@@ -2,5 +2,8 @@
   "name": "presentation-coach",
   "private": true,
   "type": "module",
-  "scripts": { "test": "node --test tests/" }
+  "scripts": {
+    "test": "node --test tests/",
+    "start": "python3 scripts/serve.py"
+  }
 }

@@ -73,3 +73,12 @@ test('fast speech segment becomes a tip', () => {
   const r = buildReport(mk(300, (s) => (s.t >= 60 && s.t < 80) ? { rate: 380 } : {}), SET);
   assert.ok(r.tips.some((x) => x.t === 60 && x.text.includes('빨라졌어요')), JSON.stringify(r.tips));
 });
+
+test('a long look-away always makes the top 3 tips (gaze is the main metric)', () => {
+  const r = buildReport(mk(324, (s) => ({
+    ...(s.t >= 97 && s.t < 104 ? { frontal: false, dir: 'down' } : {}),
+    ...(s.t >= 230 ? { deltaDb: -12 } : {}),
+    rate: s.t >= 30 && s.t < 70 ? 250 : s.t >= 150 && s.t < 190 ? 360 : 300,
+  })), SET);
+  assert.ok(r.tips.some((x) => x.t === 97 && x.text.includes('아래')), JSON.stringify(r.tips));
+});
