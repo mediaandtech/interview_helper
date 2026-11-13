@@ -239,3 +239,19 @@ main { flex: 1; min-height: 0; position: relative; }
   .intervals { max-height: none; overflow: visible; }
   .intervals .btn, .markers .btn:first-child { display: inline !important; border: 0; padding: 0; }
 }
+
+/* 개인별 보정은 화면 전체의 실제 표적 위치를 사용합니다. */
+.precise-dialog { position:fixed; inset:0; width:100vw; height:100dvh; max-width:none; max-height:none; margin:0; padding:0; border:0; background:var(--background); color:var(--foreground); }
+.precise-dialog::backdrop { background:var(--background); }
+.calibration-board { position:relative; width:100%; height:100%; }
+.calibration-target { position:absolute; width:24px; height:24px; transform:translate(-50%,-50%); border:3px solid var(--foreground); border-radius:50%; box-shadow:0 0 0 10px var(--muted); }
+.calibration-instructions { position:absolute; left:12%; bottom:12%; width:min(440px,76%); padding:var(--space-4); border:1px solid var(--border); border-radius:12px; background:var(--card); }
+.calibration-instructions h2 { font-size:var(--fs-title); margin:0 0 8px; }
+.calibration-instructions progress { display:block; width:100%; margin:12px 0; accent-color:var(--foreground); }
+.calibration-instructions .btn { margin-top:12px; }
+.gaze-detail { margin:8px 0 0; overflow-wrap:anywhere; }
+.gaze-meta { display:flex; flex-wrap:wrap; gap:8px; }
+@media(max-width:760px) { .calibration-instructions { left:12%; bottom:16%; padding:12px; font-size:13px; } .gaze-pill { max-width:calc(100vw - 64px); font-size:14px; white-space:normal; } }
+.gaze-values { white-space:pre-wrap; font-size:var(--fs-caption); font-family:var(--font-mono); overflow-wrap:anywhere; }
+.gt-result .inline { flex-wrap:wrap; }
+#precise-status { overflow-wrap:anywhere; }

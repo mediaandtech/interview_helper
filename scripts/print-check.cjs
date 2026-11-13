@@ -1,9 +1,9 @@
 // 복기 화면 인쇄 점검: 숨겨진 메모 탭도 인쇄되고, 카드 글자가 흰 종이에서 읽혀야 함
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const {launchBrowser}=require('./browser-support.cjs');
 (async () => {
-  const browser = await chromium.launch({ channel: 'chrome', headless: true });
+  const browser = await launchBrowser();
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
-  await page.goto((process.env.REVIEW_URL || 'http://127.0.0.1:8080') + '/?demo=1');
+  await page.goto((process.env.REVIEW_URL || 'http://127.0.0.1:8081') + '/?demo=1');
   await page.waitForTimeout(4500);
   await page.getByRole('button', { name: '답변 끝내기 (Esc)' }).click();
   await page.locator('#review-time').waitFor();

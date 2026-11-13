@@ -23,6 +23,42 @@ export const GAZE = {
   warnMargin: 0.15,    // 목표보다 이만큼 낮을 때까지 주황
   flipYaw: false,      // 시선 테스트에서 좌우가 반대로 나오면 true
   flipPitch: false,    // 시선 테스트에서 위아래가 반대로 나오면 true
+  flipIrisX: false,    // 홍채 좌우가 반대로 나오면 true
+
+  // ── 측정 유효성 ──
+  minEyeWidthPx: 12,   // 눈 너비가 이보다 작으면 세밀한 눈 추정을 보류
+  staleMs: 500,        // 새 영상 프레임이 이만큼 없으면 '영상 정지'로 보고 판정하지 않음
+  eyeClosedAbs: 0.12,  // 눈 열림(세로/가로) 이보다 좁고 감김 신호가 있으면 감김 (개인 기준이 없을 때)
+  eyeClosedRatio: 0.5, // 보정 때 눈 열림의 이 비율보다 좁으면 '좁음' (개인 기준이 있을 때)
+  blinkScore: 0.5,     // 눈 감김 blendshape 기준
+  eyeMinWidthRatio: 0.6, // 한쪽 눈 너비가 다른 눈의 이 비율보다 작으면 가림·옆모습으로 보고 제외
+  irisJitter: 0.12,    // 최근 프레임들의 홍채 위치 표준편차가 이보다 크면 불안정(눈 너비 단위)
+  irisMaxOffset: 0.6,  // 홍채가 눈 중심에서 이보다 멀면(눈 밖) 검출 오류로 봄
+
+  // ── 홍채 방식(실험) ──
+  eyeMethod: 'blendshape',             // 기본 계산 방식. 'iris'는 비교 확인 후에만 선택
+  irisSpanDefault: { x: 0.12, y: 0.08 }, // 정밀 보정이 없을 때 정면→경계 거리(눈 너비 단위)
+  outOfRangeScale: 3,                  // 경계 거리의 이 배수를 넘으면 보정 범위 밖으로 표시
+
+  // ── 시간 안정화 ──
+  smoothTauSec: 0.15,  // 각도 평활화 시간상수
+  switchHoldSec: 0.3,  // 방향이 이만큼 이어져야 표시 방향을 바꿈
+  gapResetSec: 0.5,    // 측정 공백이 이보다 길면 필터 초기화
+
+  // ── 재보정 안내 ──
+  recalibSizeRatio: 0.25, // 얼굴 크기(눈 사이 거리)가 보정 때보다 이 비율 이상 달라지면
+  recalibSec: 3,          // 이 시간 이상 이어질 때 재보정 안내
+};
+
+/** 정밀 보정(선택) */
+export const PRECISE = {
+  settleSec: 0.7,      // 점이 옮겨진 뒤 시선이 자리 잡는 시간(표본 제외)
+  minSamples: 15,      // 방향마다 필요한 유효·안정 표본 수
+  maxSec: 8,           // 이 시간 안에 모이지 않으면 그 방향은 실패
+  windowSize: 8,       // 안정성 판정 창(표본 수)
+  maxHeadStdDeg: 2,    // 창 안 고개 각도 표준편차가 이보다 크면 '움직임'
+  maxIrisStd: 0.04,    // 창 안 홍채 위치 표준편차가 이보다 크면 '움직임'
+  minSeparation: 2,    // 방향 간 거리/표준편차가 이보다 작으면 구분 어려움
 };
 
 /** 목소리 크기 (보정 때 잰 기준 음량 대비 dB) */

@@ -2,3 +2,15 @@
 node_modules/
 .DS_Store
 .playwright-mcp/
+
+# Local development and generated artifacts
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.artifacts/
+playwright-report/
+test-results/
+.env
+.env.*
+!.env.example

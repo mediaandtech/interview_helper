@@ -3,7 +3,23 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/",
-    "start": "python3 scripts/serve.py"
+    "start": "node scripts/serve.mjs",
+    "dev": "node scripts/serve.mjs",
+    "test": "node scripts/run-unit.mjs",
+    "test:browser": "node scripts/test-browser.mjs",
+    "test:browser:review": "node scripts/test-browser.mjs review",
+    "test:browser:gaze": "node scripts/test-browser.mjs gaze",
+    "test:browser:print": "node scripts/test-browser.mjs print",
+    "setup:browser": "playwright install chromium",
+    "doctor": "node scripts/check-env.mjs",
+    "prestart": "node scripts/check-env.mjs",
+    "predev": "node scripts/check-env.mjs"
+  },
+  "description": "브라우저에서 면접 답변을 기록하고 직접 복기하는 도구",
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "playwright": "1.65.0"
   }
 }

@@ -5,6 +5,8 @@ import { startAudio } from '../sensors/audio.js';
 import { initGaze } from '../sensors/gaze.js';
 import { createWebcamSketch } from './webcam-sketch.js';
 import { createDemoAudio, createDemoGaze, DEMO_CALIB } from '../sensors/demo.js';
+import { frameFeature, computeBasicCalibration, calibrationCompatible } from '../analysis/calibration.js';
+import { showPreciseCalibration } from './precise-calibration.js';
 import { debugLine } from './app.js';
 import { button, card, field, switchField, segmented, checklist, bindTabs } from './components.js';
 
@@ -22,6 +24,7 @@ const MSG = {
 let root, sketch, raf, app, state;
 let generation = 0;
 let cancelFrames = null;
+let preciseController = null;
 const openingSensors = new Set();
 
 const median = (a) => { const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; };
@@ -57,6 +60,7 @@ function template() {
         ${field({ label: '좌우 (±도)', forId: 'gaze-yaw', controlHtml: '<input class="input num" id="gaze-yaw" type="number" min="1" max="90">' })}
         ${field({ label: '위아래 (±도)', forId: 'gaze-pitch', controlHtml: '<input class="input num" id="gaze-pitch" type="number" min="1" max="90">' })}
       </div><p class="hint">보정한 정면 자세를 기준으로 해요. 눈 방향은 별도의 검출 기준도 함께 써요.</p></details>
+      ${field({label:'눈 방향 계산 방식',forId:'eye-method',controlHtml:'<select class="select" id="eye-method"><option value="blendshape">기본 방식 · 눈 방향 신호</option><option value="iris">홍채 방식 · 실험</option></select>',hint:'홍채 방식은 개인별 보정 뒤 점검 화면에서 비교해 선택하세요. 정확도가 자동으로 보장되지는 않습니다.'})}
     </div>`,
   });
   const recording = card({
@@ -77,6 +81,8 @@ function template() {
         { key: 'face', title: '카메라를 정면으로 바라보세요' },
         { key: 'voice', title: '아래 문장을 평소 목소리로 읽어 주세요', html: `<p class="quote">“${READ_TEXT}”</p>` },
       ])}
+      <div class="inline"><button type="button" class="btn" data-variant="outline" id="precise-run" disabled>정밀 시선 보정</button><button type="button" class="btn" data-variant="ghost" id="precise-clear" disabled>기본 보정으로</button></div>
+      <p id="precise-status" class="hint" role="status">기본 준비 확인 뒤 렌즈·화면 중앙·네 방향을 추가 보정할 수 있습니다.</p>
       <div class="progress" role="progressbar" aria-label="준비 확인 진행"><span style="width:0%"></span></div>
     </div>`,
     footerHtml: `${button({ label: '준비 확인 시작', id: 'calib-run', variant: 'outline' })}
@@ -105,7 +111,7 @@ function readForm() {
   const gazeTarget = p.gazeTarget;
   const gazeLimits = { yawDeg: Math.min(90,Math.max(1,num('#gaze-yaw',GAZE.yawDeg))), pitchDeg: Math.min(90,Math.max(1,num('#gaze-pitch',GAZE.pitchDeg))) };
   rateMin = Math.max(1, Math.min(1000, rateMin)); rateMax = Math.max(rateMin, Math.min(1000, rateMax));
-  return { presetKey: state.presetKey, durationSec, rateMin, rateMax, gazeTarget, gazeLimits, question: root.querySelector('#question').value.trim(), recordAnswer: root.querySelector('#record-answer').checked, focusMode: root.querySelector('#focus-mode').checked };
+  return { presetKey: state.presetKey, durationSec, rateMin, rateMax, gazeTarget, gazeLimits, eyeMethod:root.querySelector('#eye-method').value, question: root.querySelector('#question').value.trim(), recordAnswer: root.querySelector('#record-answer').checked, focusMode: root.querySelector('#focus-mode').checked };
 }
 
 function applyPreset(key) {
@@ -129,6 +135,8 @@ function setProgress(f) { root.querySelector('.progress > span').style.width = `
 function updateStart() {
   const btn = root.querySelector('#start');
   const { audio, gaze } = app.sensors;
+  root.querySelector('#precise-run').disabled = !gaze || state.calib.yaw0 == null || state.running || gaze.demo;
+  root.querySelector('#precise-clear').disabled = !state.basicCalib || state.running || state.calib.kind !== 'precise';
   const faceOk = !gaze || state.calib.yaw0 != null;
   const voiceOk = !audio || state.calib.baseDb != null;
   const tried = state.tried;
@@ -179,29 +187,35 @@ async function runCalibration() {
   state.running = true; btn.disabled = true; updateStart();
   btn.textContent = '장치 켜는 중…';
   const token = generation;
+  const voice={baseDb:state.calib.baseDb,baseHz:state.calib.baseHz};
+  state.calib={yaw0:null,pitch0:0,eye0:null,...voice};
+  state.basicCalib=null;
+  root.querySelector('#precise-status').textContent='기본 보정 기준을 다시 측정 중입니다.';
   const opened = await openSensors(token);
   if (!opened || token !== generation || !root) return;
   const { audioErr, gazeErr } = opened; // 화면을 떠남
   const { audio, gaze } = app.sensors;
 
   // 1단계: 정면 기준 (같은 시간 동안 주변 소음도 잼)
+  gaze?.setBase?.(null);
   const noise = [];
   if (gaze) {
     setStep('face', 'active', '');
     btn.textContent = '정면 측정 중…';
-    const yaws = [], pitches = [], eyes = [];
+    const features=[];
     await sleepFrames(CALIB.faceSec * 1000, (now, f) => {
       setProgress(f * 0.33);
       const d = gaze.detect(now);
       state.landmarks = d.landmarks;
-      if (audio) noise.push(audio.read(null).db);
-      if (d.face) { yaws.push(d.face.yaw); pitches.push(d.face.pitch); eyes.push(d.face.eye); }
+      if (audio) { const db=audio.read(null).db; if(db!=null) noise.push(db); }
+      const feature=frameFeature(d); if(!feature.issue) features.push(feature);
     });
     if (token !== generation) return;
-    if (yaws.length >= 10) {
-      const avgEye = (k) => eyes.reduce((a, e) => a + e[k], 0) / eyes.length;
-      Object.assign(state.calib, { yaw0: median(yaws), pitch0: median(pitches),
-        eye0: { down: avgEye('down'), up: avgEye('up'), left: avgEye('left'), right: avgEye('right') } });
+    const basic=computeBasicCalibration(features);
+    if (basic) {
+      Object.assign(state.calib,basic);
+      state.basicCalib=structuredClone(state.calib);
+      gaze.setBase?.(state.calib);
       setStep('face', 'done', '정면 위치를 기록했어요.');
     } else {
       Object.assign(state.calib, { yaw0: null });
@@ -245,8 +259,44 @@ async function runCalibration() {
 
   setProgress(1);
   state.tried = true; state.running = false;
+  if(state.calib.yaw0!=null) state.basicCalib=structuredClone(state.calib);
+  const reused=calibrationCompatible(state.calib,state.savedPrecise);
+  if(reused) {state.calib={...state.savedPrecise,baseDb:state.calib.baseDb,baseHz:state.calib.baseHz};gaze?.setBase?.(state.calib);}
   btn.disabled = false; btn.textContent = '다시 측정';
+  if(state.calib.yaw0!=null) root.querySelector('#precise-status').textContent=reused?'렌즈 표본과 얼굴 크기를 확인해 이전 정밀 보정을 유지했습니다.':'기본 정면 기준을 기록했습니다. 필요하면 정밀 시선 보정을 진행하세요.';
   updateStart();
+}
+
+async function runPrecise() {
+  if(state.running || !app.sensors.gaze) return;
+  const token=generation;
+  state.running=true; root.querySelector('#calib-run').disabled=true; updateStart();
+  const controller=new AbortController();
+  preciseController=controller;
+  const oldBase=state.calib;
+  app.sensors.gaze.setBase?.(null);
+  try {
+    const result=await showPreciseCalibration(app.sensors.gaze,{signal:controller.signal,onFrame:d=>{state.landmarks=d.landmarks;}});
+    if(token!==generation) return;
+    const status=root.querySelector('#precise-status');
+    if(result.cancelled) status.textContent='정밀 보정을 취소했습니다. 이전 기준을 유지합니다.';
+    else if(result.calib.quality!=='ok') {
+      status.textContent=`보정 표본 또는 방향 구분이 부족합니다 (${(result.calib.missing??result.calib.weak).join(', ')}). 이전 기준을 유지합니다. 다시 시도할 수 있습니다.`;
+    } else {
+      const voice={baseDb:state.calib.baseDb,baseHz:state.calib.baseHz};
+      state.calib={...result.calib,...voice};state.savedPrecise=structuredClone(state.calib);
+      status.textContent='렌즈·화면 중앙·네 방향 기준을 기록했습니다. 별도의 시선 인식 테스트에서 두 방식을 비교하세요.';
+    }
+  } catch(err) {
+    console.warn('[setup] precise calibration failed:',err);
+    if(token===generation) root.querySelector('#precise-status').textContent='정밀 보정을 마치지 못했습니다. 이전 기준으로 다시 시도할 수 있습니다.';
+  } finally {
+    if(token===generation) {
+      app.sensors.gaze?.setBase?.(state.calib??oldBase);state.running=false;
+      root.querySelector('#calib-run').disabled=false;updateStart();
+    }
+    if(preciseController===controller) preciseController=null;
+  }
 }
 
 export function enter(appRef) {
@@ -254,12 +304,15 @@ export function enter(appRef) {
   app = appRef;
   root = document.getElementById('screen-setup');
   state = { presetKey: app.settings?.presetKey ?? 'interview', calib: { yaw0: null, pitch0: 0, eye0: null, baseDb: null, baseHz: null },
-    tried: false, running: false, landmarks: null };
+    tried: false, running: false, landmarks: null, savedPrecise:app.settings?.calib?.kind==='precise'?structuredClone(app.settings.calib):null };
   root.innerHTML = template();
   document.getElementById('topbar-right').innerHTML = topActions();
   bindTabs(root);
 
   applyPreset(state.presetKey);
+  root.querySelector('#eye-method').value=app.settings?.eyeMethod??'blendshape';
+  root.querySelector('#precise-run').onclick=runPrecise;
+  root.querySelector('#precise-clear').onclick=()=>{state.calib=structuredClone(state.basicCalib);state.savedPrecise=null;app.sensors.gaze?.setBase?.(state.calib);root.querySelector('#precise-status').textContent='기본 보정 기준으로 돌아왔습니다.';updateStart();};
   root.querySelector('#question').value = app.settings?.question ?? '';
   root.querySelector('#record-answer').checked = app.settings?.recordAnswer ?? false;
   root.querySelector('#focus-mode').checked = app.settings?.focusMode ?? true;
@@ -275,12 +328,12 @@ export function enter(appRef) {
   top.querySelector('#last-review').onclick = () => { app.settings = { ...app.settings, ...readForm() }; app.go('report'); };
   root.querySelector('#calib-run').addEventListener('click', runCalibration);
   top.querySelector('#demo-start').addEventListener('click', startDemo);
-  top.querySelector('#gaze-test').addEventListener('click', () => { app.settings = { ...readForm() }; app.go('gazetest'); });
+  top.querySelector('#gaze-test').addEventListener('click', () => { app.settings = { ...readForm(), calib:state.calib.yaw0!=null?{...structuredClone(state.calib),gazeLimits:readForm().gazeLimits}:null }; app.go('gazetest'); });
   if (app.demo && !app.demoAutoStarted) { app.demoAutoStarted = true; startDemo(); return; } // ?demo=1
   root.querySelector('#start').addEventListener('click', () => {
     const c = state.calib;
     const form = readForm();
-    app.settings = { ...form, calib: { gazeLimits: form.gazeLimits,
+    app.settings = { ...form, calib: { ...c, gazeLimits: form.gazeLimits, eyeMethod:form.eyeMethod,
       baseDb: app.sensors.audio ? c.baseDb : null, baseHz: c.baseHz,
       yaw0: c.yaw0 ?? 0, pitch0: c.pitch0 ?? 0, eye0: c.eye0 ?? { down: 0, up: 0, left: 0, right: 0 },
     } };
@@ -296,6 +349,7 @@ export function enter(appRef) {
 
 export function leave(next) {
   generation++;
+  preciseController?.abort();
   cancelFrames?.(); cancelFrames = null;
   for (const sensor of openingSensors) sensor.stop?.();
   openingSensors.clear();

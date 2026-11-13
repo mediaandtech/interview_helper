@@ -1,5 +1,6 @@
 // p5 인스턴스: 같은 시간축에 쌓은 4줄 그래프(시선 / 속도 / 크기 / 높낮이) + 마우스 툴팁
 import { THEME, SERIES_COLORS } from '../config.js';
+import { GAZE_REASON_TEXT } from '../analysis/gaze-logic.js';
 import { nearestSample } from '../analysis/review.js';
 import { formatStamp } from '../util/time.js';
 
@@ -9,6 +10,8 @@ const C = { grid: THEME.border, muted: THEME.mutedText, text: THEME.text, panel:
   band: 'rgba(250,250,250,0.08)' }; // 참고 범위 음영: 위치만 보여 주는 중립 회색
 const LANES = [
   { key: 'gaze', label: '시선', h: 0.6 },
+  { key: 'head', label: '고개', h: 0.4 },
+  { key: 'eye', label: '눈', h: 0.4 },
   { key: 'rate', label: '속도', h: 1 },
   { key: 'vol', label: '크기', h: 1 },
   { key: 'pitch', label: '높낮이', h: 1 },
@@ -71,14 +74,14 @@ export function createReportChart(parentEl, samples, report, settings, onSeek = 
         p.text(l.label, LEFT - 10, l.y + l.h / 2);
         p.stroke(C.grid); p.strokeWeight(1); p.noFill(); p.rect(LEFT, l.y, p.width - LEFT - RIGHT, l.h);
       }
-      // 시선 띠
-      const g = lane('gaze');
-      p.noStroke();
-      for (let i = 0; i < samples.length; i++) {
-        const s = samples[i];
-        const x = X(s.t), w = Math.max(1, X(Math.min(samples[i + 1]?.t ?? dur, s.t + 0.1)) - x + 0.5);
-        p.fill(s.frontal == null ? C.gazeNone : s.frontal ? C.gazeIn : C.gazeOut);
-        p.rect(x, g.y + 1, w, g.h - 2);
+      // 유효 시간만 칠하고 프레임 공백을 다음 표본까지 늘리지 않습니다.
+      for(const [key,read] of [['gaze',s=>s.frontal],['head',s=>s.head?.yaw==null?null:s.head.ok],['eye',s=>['closed','uncertain','none'].includes(s.eye?.dir)||!s.eye?null:s.eye.ok]]) {
+        const g=lane(key); p.noStroke();
+        for(const s of report.gazeTimeline??[]) {
+          const value=read(s),x=X(s.start),w=Math.max(.5,X(s.end)-x);
+          p.fill(value==null?C.gazeNone:value?C.gazeIn:C.gazeOut);
+          p.rect(x,g.y+1,w,g.h-2);
+        }
       }
       // 속도
       band('rate', settings.rateMin, settings.rateMax, 0, rateMax);
@@ -117,11 +120,13 @@ export function createReportChart(parentEl, samples, report, settings, onSeek = 
       const inside = p.mouseX >= LEFT && p.mouseX <= p.width - RIGHT && p.mouseY >= 0 && p.mouseY <= p.height;
       if (!inside || !samples.length) return;
       const t = ((p.mouseX - LEFT) / (p.width - LEFT - RIGHT)) * dur;
-      const s = nearestSample(samples, t);
+      const found=nearestSample(samples,t);
+      const s=found && Math.abs(found.t-t)<=.2?found:{};
+      const g=report.gazeTimeline?.find(g=>t>=g.start&&t<g.end);
       p.stroke(C.text); p.strokeWeight(1); p.line(p.mouseX, TOP, p.mouseX, p.height - BOTTOM);
 
       const lines = [
-        `${formatStamp(t)} · 시선 ${s.frontal == null ? '—' : DIR[s.dir] ?? s.dir}`,
+        `${formatStamp(t)} · 시선 ${g?.gazeReason?GAZE_REASON_TEXT[g.gazeReason]??g.gazeReason:g?.frontal == null ? '측정 불확실' : DIR[g.dir] ?? g.dir}`,
         `속도 ${s.rate == null ? '—' : Math.round(s.rate)} · 크기 ${s.speaking && s.deltaDb != null ? `${s.deltaDb >= 0 ? '+' : ''}${s.deltaDb.toFixed(0)}dB` : '쉼'} · ${s.hz ? `${Math.round(s.hz)}Hz` : '—'}`,
       ];
       const hit = ranges.find((r) => t >= r.a && t <= r.b);

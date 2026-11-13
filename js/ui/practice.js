@@ -7,7 +7,10 @@ import { timeProgress } from '../analysis/classify.js';
 import { semitoneStd, summarizeFrames } from '../analysis/audio-math.js';
 import { createSyllableEstimator } from '../analysis/syllables.js';
 import { createRateTracker } from '../analysis/rate.js';
-import { analyzeGaze, gazeGrid } from '../analysis/gaze-logic.js';
+import { GAZE_REASON_TEXT, gazeGrid } from '../analysis/gaze-logic.js';
+import { createGazePipeline } from '../analysis/gaze-pipeline.js';
+import { createDriftWatch } from '../analysis/calibration.js';
+import { MAX_HOLD_SEC } from '../analysis/gaze-timeline.js';
 import { createRecorder } from '../recorder.js';
 import { startRecording } from '../media-recorder.js';
 import { escapeHtml } from '../util/html.js';
@@ -41,7 +44,7 @@ function template(settings) {
         <div class="gaze-head">
           <div class="gaze-pill" id="pill" data-status="idle">
             <span class="dot"></span><span id="pill-text">${WAIT}</span>
-            <span class="cum" id="pill-cum" title="얼굴이 검출된 표본 중 정면 참고 범위 안의 비율">누적 —</span>
+            <span class="cum" id="pill-cum" title="시선을 측정할 수 있었던 시간 중 정면 참고 범위 안의 비율">누적 —</span>
           </div>
         </div>
         <div class="countdown" id="countdown"></div>
@@ -55,7 +58,7 @@ function template(settings) {
         ${metricCard({ id: 'p-pitch', title: '음높이 변화 · 최근 10초', numId: 'v-pitch', stateId: 'l-pitch', extraHtml: '<div class="spark" id="spark"></div>' })}
         <div class="card metric"><div class="metric-head"><span class="metric-title">고개 · 눈</span></div>
           <div class="gaze-parts"><span class="badge" data-variant="outline" id="part-head" data-ok="true">고개 <b>—</b></span>
-          <span class="badge" data-variant="outline" id="part-eye" data-ok="true">눈 <b>—</b></span></div></div>
+          <span class="badge" data-variant="outline" id="part-eye" data-ok="true">눈 <b>—</b></span></div><p class="hint gaze-detail" id="gaze-quality"></p></div>
       </aside>
     </div>
     <p class="focus-note hint">측정값은 숨겨져 있어요. 답변이 끝나면 복기 화면에서 영상과 함께 볼 수 있어요.</p>
@@ -85,6 +88,8 @@ function newState(settings) {
     estimator: createSyllableEstimator(),
     rate: createRateTracker(),
     gazeOut: { status: 'idle', ratio: null, cumulative: null, dir: 'none', frontal: null },
+    pipeline:createGazePipeline(settings.calib,settings.eyeMethod??'blendshape'),
+    drift:createDriftWatch(settings.calib), gazeFrames:[], lastObservation:null, gazeSec:0, frontalSec:0, recalib:null,
     gazeView: null,      // { head, eye, grid, faceMissing }
     landmarks: null,
     recorder: createRecorder(),
@@ -94,7 +99,6 @@ function newState(settings) {
     volHist: [],         // 최근 1초 말한 샘플의 기준 대비 dB
     pitchStatus: 'idle',
     recording: null,
-    faceKnown: 0, faceFront: 0,
     sketches: [],
     ui: {},
   };
@@ -115,11 +119,24 @@ function readSensors(now) {
     s.lastGaze = now;
     const d = gaze.detect(now);
     s.landmarks = d.landmarks;
-    const g = analyzeGaze(d.face, calib);
-    s.gazeView = { head: g.head, eye: g.eye, grid: gazeGrid(d.face, calib), faceMissing: !d.face };
-    if (s.phase === 'live') {
-      const o = { status: 'idle', dir: d.face ? g.dir : 'none' };
-      s.gazeOut = { ...o, frontal: d.face ? g.frontal : null };
+    const processed=s.pipeline.update(d,now);
+    if(processed) {
+      const g=processed.stable;
+      s.gazeView={...g, grid:gazeGrid(processed.frame?.face,calib),faceMissing:g.reason==='no-face'};
+      s.recalib=s.drift.update(d.face,now/1000);
+      if(s.phase==='live') {
+        const relative=(now-s.startMs)/1000;
+        if(s.lastObservation) {
+          const weight=Math.min(MAX_HOLD_SEC,Math.max(0,relative-s.lastObservation.t));
+          if(s.lastObservation.frontal!=null) {s.gazeSec+=weight;if(s.lastObservation.frontal)s.frontalSec+=weight;}
+        }
+        const observation={t:relative,frontal:g.frontal,dir:g.dir,gazeReason:g.reason,head:g.head,eye:g.eye,
+          raw:processed.raw,blend:processed.blend,iris:processed.iris,
+          faceRaw:d.face?{yaw:d.face.yaw,pitch:d.face.pitch,eye:d.face.eye,eyes:d.face.eyes,size:d.face.size}:null,
+          recalib:s.recalib};
+        s.gazeFrames.push(observation); s.lastObservation=observation;
+        s.gazeOut={...g,status:'idle',cumulative:s.gazeSec?s.frontalSec/s.gazeSec:null};
+      }
     }
   }
 }
@@ -151,13 +168,14 @@ function tick() {
   const st = semitoneStd(s.hzHist.map((x) => x.hz));
 
   const g = s.gazeOut;
-  if (g.frontal != null) { s.faceKnown++; if (g.frontal) s.faceFront++; }
-  g.cumulative = s.faceKnown ? s.faceFront / s.faceKnown : null;
+
   s.recorder.push({
     t: tt,
     frontal: gaze ? g.frontal : null,
     dir: gaze ? (g.frontal ? 'front' : g.dir) : 'none',
     faceMissing: !!gaze && !!s.gazeView?.faceMissing,
+    gazeReason:g.reason??null, head:g.head??null, eye:g.eye??null, raw:s.gazeFrames.at(-1)?.raw??null,
+    gazeFrames:s.gazeFrames.splice(0), recalib:s.recalib,
     speaking, db, deltaDb, hz: speaking ? hz : null, rate,
   });
 
@@ -199,22 +217,27 @@ function renderGaze() {
   setStatus(pill, 'idle');
   setStatus(cam, 'idle');
   let text = '정면';
-  if (v?.faceMissing) text = '얼굴이 보이지 않아요';
+  if(g.reason) text=GAZE_REASON_TEXT[g.reason]??'측정 불확실';
+  else if(g.pending) text='방향 전환 확인 중';
+  else if (v?.faceMissing) text = '얼굴이 보이지 않아요';
   else if (!g.frontal && DIR_WORD[g.dir] && g.dir !== 'front') text = `${DIR_WORD[g.dir]}을 보고 있어요`;
   setText($('pill-text'), text);
 
   const cum = $('pill-cum');
-  setText(cum, g.cumulative == null ? '누적 —' : `검출 중 ${Math.round(g.cumulative * 100)}%`);
+  setText(cum, g.cumulative == null ? '누적 —' : `유효 시간 중 ${Math.round(g.cumulative * 100)}%`);
   setStatus(cum, 'idle');
 
   if (v) {
     const part = (el, label, ok, dir) => {
       el.dataset.ok = String(ok);
-      const html = `${label} <b>${v.faceMissing ? '—' : ok ? '정면' : DIR_WORD[dir]}</b>`;
+      const html = `${label} <b>${v.faceMissing ? '—' : ok ? '정면' : (DIR_WORD[dir]??({closed:'감김',uncertain:'불확실'}[dir]??'—'))}</b>`;
       if (el.innerHTML !== html) el.innerHTML = html;
     };
     part($('part-head'), '고개', v.head.ok || v.faceMissing, v.head.dir);
     part($('part-eye'), '눈', v.eye.ok || v.faceMissing, v.eye.dir);
+    const detail=$('gaze-quality');
+    const source={both:'양쪽 눈',L:'왼쪽 눈만',R:'오른쪽 눈만',avg:'눈 평균',none:'사용 가능한 눈 없음'}[g.eye?.source]??'';
+    detail.textContent=`${source}${g.eye?.method==='iris'?' · 홍채 방식(실험)':''}${s.recalib?' · 카메라와의 거리가 달라졌습니다. 다음 답변 전 재보정하세요.':''}`;
     const ang = $('angles');
     ang.hidden = v.faceMissing;
     if (!v.faceMissing) {
@@ -240,6 +263,7 @@ function step(now) {
       s.lastTick = now;
       $('countdown').remove();
       s.frames = []; // 카운트다운 동안 모인 소리는 버림
+      s.pipeline.reset(); s.lastObservation=null;
       s.recording = startRecording(app.sensors, s.settings.recordAnswer);
       setText($('record-state'), s.recording.message);
       const rec = document.getElementById('rec-badge');
@@ -263,6 +287,7 @@ async function finish() {
   const demo = !!app.sensors.audio?.demo || !!app.sensors.gaze?.demo;
   for (const sensor of Object.values(app.sensors)) sensor?.stop?.();
   app.sensors = { audio: null, gaze: null };
+  if(session.gazeFrames.length) session.recorder.push({t:total,frontal:session.gazeOut.frontal,gazeFrames:session.gazeFrames.splice(0)});
   app.go('report', { samples: session.recorder.samples(), durationSec: total, media, demo });
 }
 

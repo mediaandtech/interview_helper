@@ -106,8 +106,9 @@ export function createDemoGaze(clock = () => performance.now(), originMs = 0) {
       lm[1] = project(NOSE_TIP, yr, pr);
       const shift = [(eye.right - eye.left) * 0.09, (eye.up - eye.down) * 0.05, 0];
       for (const [i, p] of Object.entries(IRIS)) lm[i] = project([p[0] + shift[0], p[1] + shift[1], p[2]], yr, pr);
-      return { face: { yaw, pitch, eye }, landmarks: lm };
+      return { t: clock(), fresh: true, ageMs: 0, face: { yaw, pitch, eye }, landmarks: lm, quality: { reason: null, eyes: { L: 'ok', R: 'ok' } } };
     },
+    setBase() {},
     stop() {},
   };
 }

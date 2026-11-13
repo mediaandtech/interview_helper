@@ -1,6 +1,6 @@
-// 웹캠 + MediaPipe Face Landmarker → 고개 각도, 눈 방향, 얼굴 점
+// 웹캠 + MediaPipe Face Landmarker → 측정 프레임(고개 각도, 눈별 상태, 홍채 위치, 제외 사유)
 import { FilesetResolver, FaceLandmarker } from '../../vendor/mediapipe/vision_bundle.mjs';
-import { headAnglesFromMatrix, eyeFromBlendshapes } from '../analysis/gaze-logic.js';
+import { createGazeFrameBuilder, frameFreshness } from '../analysis/gaze-frame.js';
 import { mediaErrorReason } from './audio.js';
 
 const WASM = new URL('../../vendor/mediapipe/wasm', import.meta.url).href;
@@ -19,8 +19,10 @@ async function createLandmarker(delegate) {
 
 /**
  * @returns {Promise<{ video: HTMLVideoElement,
- *   detect(nowMs:number): { face: {yaw:number,pitch:number,eye:object}|null, landmarks: {x:number,y:number}[]|null },
- *   stop(): void }>}
+ *   detect(nowMs:number): GazeFrame, setBase(base:{aperture:{L:number,R:number}}|null): void, stop(): void }>}
+ * GazeFrame = { t, fresh, ageMs, face|null, landmarks|null, quality:{ reason, eyes:{L,R} } }
+ *   - fresh: 이번 호출에서 새 영상 프레임을 분석했는지 (같은 프레임을 다시 세지 않기 위해)
+ *   - quality.reason: null | 'no-face' | 'stale'(영상 정지) | 'no-video' | 'detect-error'
  * 실패하면 'denied' | 'nodevice' | 'busy' | 'error' | 'model' 로 reject
  */
 export async function initGaze() {
@@ -50,30 +52,41 @@ export async function initGaze() {
     }
   }
 
+  let base = null;
+  const builder = createGazeFrameBuilder(() => base);
   let lastVideoTime = -1;
   let lastTs = 0;
-  let last = { face: null, landmarks: null };
+  let lastFreshMs = -Infinity;
+  let last = builder.build({ landmarks: null, matrix: null, nowMs: 0 });
+  const blank = (nowMs, reason) => ({ t: nowMs, fresh: false, ageMs: 0, face: null, landmarks: null, quality: { reason, eyes: { L: 'missing', R: 'missing' } } });
 
   return {
     video,
+    setBase(b) { base = b; builder.reset(); },
     detect(nowMs) {
-      if (!stream.getVideoTracks().some(t => t.readyState === 'live' && !t.muted)) return { face: null, landmarks: null };
-      if (video.readyState < 2 || video.currentTime === lastVideoTime) return last;
+      if (!stream.getVideoTracks().some(t => t.readyState === 'live' && !t.muted)) { builder.reset(); return blank(nowMs, 'no-video'); }
+      if (video.readyState < 2) return blank(nowMs, 'no-video');
+      const fr = frameFreshness({ videoTime: video.currentTime, lastVideoTime, nowMs, lastFreshMs });
+      if (!fr.fresh) {
+        // 같은 프레임: 새 판정 아님. 오래되면 마지막 얼굴을 쓰지 않음
+        return fr.stale ? { ...blank(nowMs, 'stale'), ageMs: fr.ageMs } : { ...last, fresh: false, ageMs: fr.ageMs };
+      }
       lastVideoTime = video.currentTime;
+      lastFreshMs = nowMs;
       const ts = Math.max(nowMs, lastTs + 1);
       lastTs = ts;
       let res;
       try { res = landmarker.detectForVideo(video, ts); } catch (err) {
         console.warn('[gaze] detect failed:', err);
-        last = { face: null, landmarks: null };
+        last = builder.build({ error: true, nowMs });
         return last;
       }
-      const lm = res.faceLandmarks?.[0];
-      const mat = res.facialTransformationMatrixes?.[0]?.data;
-      const bs = res.faceBlendshapes?.[0]?.categories;
-      if (!lm || !mat) { last = { face: null, landmarks: null }; return last; }
-      const { yaw, pitch } = headAnglesFromMatrix(Array.from(mat));
-      last = { face: { yaw, pitch, eye: bs ? eyeFromBlendshapes(bs) : { down: 0, up: 0, left: 0, right: 0 } }, landmarks: lm };
+      last = builder.build({
+        landmarks: res.faceLandmarks?.[0] ?? null,
+        matrix: res.facialTransformationMatrixes?.[0]?.data ?? null,
+        blendshapes: res.faceBlendshapes?.[0]?.categories ?? null,
+        nowMs, aspect: video.videoWidth / video.videoHeight, imageHeight:video.videoHeight,
+      });
       return last;
     },
     stop() {

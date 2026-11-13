@@ -1,9 +1,9 @@
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const {launchBrowser,artifactPath}=require('./browser-support.cjs');
 (async () => {
- const browser = await chromium.launch({channel:'chrome',headless:true});
+ const browser = await launchBrowser();
  const page = await browser.newPage({viewport:{width:1280,height:900}});
  const errors=[]; page.on('pageerror',e=>errors.push(e.stack || e.message)); page.on('console',msg=>{if(msg.type()==='warning' && msg.text().includes('frame skipped')) errors.push(msg.text());});
- await page.goto(process.env.REVIEW_URL || 'http://127.0.0.1:8093');
+ await page.goto(process.env.REVIEW_URL || 'http://127.0.0.1:8081');
  await page.locator('#question').fill('지원 동기 <script> test');
  await page.locator('#demo-start').click();
  await page.waitForTimeout(4500);
@@ -16,19 +16,19 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
  await page.getByRole('tab',{name:'현재 위치'}).click();
  await page.locator('#marker-note').fill('이 위치 다시 듣기');
  await page.locator('#add-marker').click();
- await page.screenshot({path:'/tmp/speechboard-review.png',fullPage:true});
+ await page.screenshot({path:artifactPath('speechboard-review.png'),fullPage:true});
  if(await page.locator('#markers li').count()!==1) throw Error('marker missing');
  if(await page.evaluate(()=>app.reviewSessions.length)!==0) throw Error('demo polluted history');
  await page.locator('#retry').click();
  if(await page.locator('#question').inputValue()!=='지원 동기 <script> test') throw Error('question not preserved');
  await page.setViewportSize({width:375,height:812});
- await page.screenshot({path:'/tmp/speechboard-setup-mobile.png',fullPage:true});
+ await page.screenshot({path:artifactPath('speechboard-setup-mobile.png'),fullPage:true});
  if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)) throw Error('mobile setup overflow');
  await page.locator('#demo-start').click();
  await page.getByRole('button',{name:'답변 끝내기 (Esc)'}).click();
  await page.locator('#review-time').waitFor(); // 복기 화면 도착 신호(#reflection 은 '전체 복기' 탭 안이라 숨겨져 있음)
  if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)) throw Error('mobile report overflow');
- await page.screenshot({path:'/tmp/speechboard-review-mobile.png',fullPage:true});
+ await page.screenshot({path:artifactPath('speechboard-review-mobile.png'),fullPage:true});
  // Exercise native MediaRecorder with synthetic media; never access the user's devices.
  await page.setViewportSize({width:1280,height:900});
  async function syntheticAnswer() {

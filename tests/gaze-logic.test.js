@@ -75,7 +75,7 @@ test('analyzeGaze separates head and eyes', () => {
   const eyes = analyzeGaze({ yaw: 0, pitch: 0, eye: { ...eye0, down: 0.8 } }, calib);
   assert.equal(eyes.head.ok, true); assert.equal(eyes.eye.ok, false); assert.equal(eyes.eye.dir, 'down'); assert.equal(eyes.dir, 'down');
   const none = analyzeGaze(null, calib);
-  assert.deepEqual([none.frontal, none.dir, none.head.ok, none.eye.ok], [false, 'none', false, false]);
+  assert.deepEqual([none.frontal, none.reason, none.dir, none.head.ok, none.eye.ok], [null, 'no-face', 'none', false, false]);
 });
 
 test('gazeGrid maps to a 3x3 cell', () => {

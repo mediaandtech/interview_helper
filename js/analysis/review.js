@@ -1,5 +1,7 @@
 // 관찰값만 계산합니다. 점수·등급·행동 권고를 생성하지 않습니다.
 import { AUDIO } from '../config.js';
+import { summarizeGaze, timedSlices } from './gaze-timeline.js';
+import { GAZE_REASON_TEXT } from './gaze-logic.js';
 import { semitoneStd } from './audio-math.js';
 
 export function nearestSample(samples, t) {
@@ -16,10 +18,10 @@ export function observedSegments(samples, classify) {
   const close = () => { if (run) out.push({ ...run, dur: run.end - run.start }); run = null; };
   for (const sample of samples) {
     const label = classify(sample);
-    if (!label || (run && (run.label !== label || sample.t - run.end > 0.15))) close();
+    if (!label || (run && (run.label !== label || sample.t - run.end > 0.05))) close();
     if (label) {
       if (!run) run = { label, start: sample.t, end: sample.t };
-      run.end = sample.t + 0.1;
+      run.end = sample.end ?? sample.t + 0.1;
     }
   }
   close();
@@ -28,25 +30,28 @@ export function observedSegments(samples, classify) {
 
 export function buildReview(samples, settings, elapsed) {
   const durationSec = Math.max(0, elapsed ?? (samples.at(-1)?.t ?? 0) + (samples.length ? 0.1 : 0));
-  const mean = (xs) => xs.length ? xs.reduce((a,b) => a+b,0) / xs.length : null;
-  const faces = samples.filter(s => s.frontal != null);
-  const spoken = samples.filter(s => s.speaking && s.deltaDb != null);
-  const rates = samples.filter(s => s.rate != null);
+  const gaze=summarizeGaze(samples,durationSec);
+  const recorded=timedSlices(samples,durationSec);
+  const spoken = recorded.filter(s => s.speaking && s.deltaDb != null);
+  const rates = recorded.filter(s => s.rate != null);
+  const seconds=xs=>xs.reduce((a,s)=>a+s.weight,0);
+  const weighted=(xs,key)=>seconds(xs)?xs.reduce((a,s)=>a+s[key]*s.weight,0)/seconds(xs):null;
   const intervals = [
-    ...observedSegments(samples, s => s.frontal === false ? '정면 참고 범위 밖' : null),
-    ...observedSegments(samples, s => s.faceMissing ? '얼굴 검출 안 됨' : null),
-    ...observedSegments(samples, s => !s.speaking || s.deltaDb == null ? null : s.deltaDb < AUDIO.okRangeDb[0] ? '기준 대비 음량 낮음' : s.deltaDb > AUDIO.okRangeDb[1] ? '기준 대비 음량 높음' : null),
-    ...observedSegments(samples, s => s.rate == null ? null : s.rate < settings.rateMin ? '속도 참고 범위 아래' : s.rate > settings.rateMax ? '속도 참고 범위 위' : null),
-  ].filter(x => x.dur >= 1).sort((a,b) => a.start-b.start);
+    ...observedSegments(gaze.slices, s => s.frontal === false ? '정면 참고 범위 밖' : null),
+    ...observedSegments(gaze.slices, s => s.gazeReason ? GAZE_REASON_TEXT[s.gazeReason]??s.gazeReason : s.faceMissing ? '얼굴 검출 안 됨' : null),
+    ...observedSegments(recorded, s => !s.speaking || s.deltaDb == null ? null : s.deltaDb < AUDIO.okRangeDb[0] ? '기준 대비 음량 낮음' : s.deltaDb > AUDIO.okRangeDb[1] ? '기준 대비 음량 높음' : null),
+    ...observedSegments(recorded, s => s.rate == null ? null : s.rate < settings.rateMin ? '속도 참고 범위 아래' : s.rate > settings.rateMax ? '속도 참고 범위 위' : null),
+  ].filter(x => x.dur + 1e-8 >= 1).sort((a,b) => a.start-b.start);
   return {
     durationSec, intervals,
-    frontalPct: faces.length ? 100 * faces.filter(s => s.frontal).length / faces.length : null,
-    avgRate: mean(rates.map(s => s.rate)),
-    avgDeltaDb: mean(spoken.map(s => s.deltaDb)),
+    frontalPct:gaze.frontalPct,
+    gazeTimeline:gaze.slices, gazeUnknownSec:gaze.unknownSec, gazeReasons:gaze.reasons, gazeComparison:gaze.comparison,
+    avgRate:weighted(rates,'rate'),
+    avgDeltaDb:weighted(spoken,'deltaDb'),
     pitchSt: semitoneStd(samples.filter(s=>s.speaking && s.hz).map(s=>s.hz)),
-    faceCoverageSec: faces.length / 10,
-    rateCoverageSec: rates.length / 10,
-    sampledSec: samples.length / 10,
-    speakingSec: spoken.length / 10,
+    faceCoverageSec:gaze.validSec,
+    rateCoverageSec:seconds(rates),
+    sampledSec:seconds(recorded),
+    speakingSec:seconds(spoken),
   };
 }
