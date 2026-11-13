@@ -10,6 +10,7 @@ const {launchBrowser,artifactPath}=require('./browser-support.cjs');
  await page.locator('#toggle-metrics').click();
  await page.waitForTimeout(1200);
  await page.getByRole('button',{name:'모니터링 끝내기 (Esc)'}).click();
+ { const body=await page.locator('body').textContent(); if(!body.includes('발화 중 음량이 달라진 폭') || body.includes('흔들린')) throw Error('volume spread copy must stay neutral'); }
  await page.getByRole('tab',{name:'전체 메모'}).click();
  await page.locator('#reflection').fill('핵심을 먼저 말해 보기');
  await page.locator('#review-time').fill('1.5');

@@ -21,7 +21,7 @@ function stats(r) {
     { label: '정면 범위 안', value: n(r.frontalPct, '%'), sub: `유효 측정 ${r.faceCoverageSec.toFixed(1)}초 기준` },
     { label: '속도 추정 평균', value: n(r.avgRate), sub: `음절/분 · 측정 ${r.rateCoverageSec.toFixed(1)}초` },
     { label: '기준 대비 음량', value: n(r.avgDeltaDb, ' dB', 1), sub: `발화 추정 ${r.speakingSec.toFixed(1)}초 기준` },
-    { label: '음량 변화 폭', value: n(r.volumeStdDb, ' dB', 1), sub: '발화 중 음량이 흔들린 정도(표준편차)' },
+    { label: '음량 변화 폭', value: n(r.volumeStdDb, ' dB', 1), sub: '발화 중 음량이 달라진 폭(표준편차)' },
     { label: '음높이 변화량', value: n(r.pitchSt, ' 반음', 1), sub: '발화 중 검출한 음높이의 분산 정도' },
     { label: '모니터링 시간', value: formatClock(r.durationSec), sub: `표본 기록 ${r.sampledSec.toFixed(1)}초` },
   ]);
