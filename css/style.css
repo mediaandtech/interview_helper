@@ -125,7 +125,7 @@ main { flex: 1; min-height: 0; position: relative; }
 .advanced summary { cursor: pointer; margin: 0; }
 .advanced label { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; color: var(--muted); }
 .privacy { color: var(--muted); font-size: 12px; margin: 0 4px; }
-.preview { height: 200px; border-radius: 3px; overflow: hidden; background: #0b0c0e; margin-bottom: 10px; }
+.preview { height: 260px; border-radius: 3px; overflow: hidden; background: #0b0c0e; margin-bottom: 10px; }
 .steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .steps li { display: flex; gap: 10px; align-items: flex-start; color: var(--muted); }
 .steps li b { font-weight: 600; }

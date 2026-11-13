@@ -51,7 +51,8 @@ export function createWebcamSketch(parentEl, getState) {
       p.background(THEME.video);
       const v = st.video;
       const vw = v?.videoWidth || VIRTUAL.w, vh = v?.videoHeight || VIRTUAL.h;
-      const sc = Math.max(p.width / vw, p.height / vh);
+      // 자르지 않고 전체가 보이게(contain). 꽉 채우면(cover) 넓은 칸에서 얼굴이 잘려 나감
+      const sc = Math.min(p.width / vw, p.height / vh);
       const fit = { w: vw * sc, h: vh * sc };
       fit.x = (p.width - fit.w) / 2; fit.y = (p.height - fit.h) / 2;
 
