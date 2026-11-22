@@ -1,66 +1,49 @@
-/* =====================================================================
-   SpeechBoard 토큰 — Basecoat UI(shadcn) 다크 테마 위에 얹는 앱 값
-   - 라이브러리: vendor/basecoat/basecoat.cdn.min.css (기본 Vega, <html class="dark">)
-   - html.dark 블록: Basecoat 다크 토큰을 같은 색의 hex로 고정(p5 그림이 같은 값을 쓰도록).
-     js/config.js 의 THEME / SERIES_COLORS 와 tests/tokens.test.js 로 일치를 확인합니다.
-   - 화면 CSS(css/app.css)는 Basecoat 토큰과 아래 앱 토큰만 씁니다.
-   ===================================================================== */
-
-html.dark {
-  --background: #0a0a0a;
-  --foreground: #fafafa;
-  --card: #171717;
-  --card-foreground: #fafafa;
-  --popover: #171717;
-  --popover-foreground: #fafafa;
-  --primary: #e5e5e5;
-  --primary-foreground: #171717;
-  --secondary: #262626;
-  --secondary-foreground: #fafafa;
-  --muted: #262626;
-  --muted-foreground: #a1a1a1;
-  --accent: #404040;
-  --accent-foreground: #fafafa;
-  --destructive: #ff6467;
-  --border: #2e2e2e;
-  --input: #333333;
-  --ring: #737373;
-  --chart-1: #93c5fd;
-  --chart-2: #3b82f6;
-  --chart-3: #2563eb;
-  --chart-4: #1d4ed8;
-  --chart-5: #1e40af;
-}
-
+/* Interview Studio / Forest & Mint — 화면과 p5 캔버스의 공통 디자인 토큰 */
 :root {
-  /* 글꼴: Basecoat 기본 Geist 는 불러오지 않음(오프라인) → 시스템 + 한글 */
-  --font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", system-ui, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
-
-  /* 앱 토큰 */
-  --video: #000000;                  /* 웹캠·영상 바탕 */
-  --range-band: color-mix(in oklab, var(--foreground) 22%, transparent); /* 참고 범위 띠(위치만 표시) */
-  --scrim: rgba(0, 0, 0, .6);        /* 영상 위 글자 바탕 */
-
-  /* 글자 크기 */
-  --fs-caption: 12px;
-  --fs-body: 14px;
-  --fs-lead: 16px;
-  --fs-title: 18px;
-  --fs-metric: 24px;
-  --fs-stat: 26px;
-  --fs-clock: 32px;
-
-  /* 간격 (4px 단위) */
-  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
-  --space-5: 20px; --space-6: 24px; --space-8: 32px;
-
-  /* 움직임 */
-  --dur-fast: 120ms;
-  --dur-base: 200ms;
+  color-scheme: light;
+  --background: #f4f3ee;
+  --foreground: #153831;
+  --card: #ffffff;
+  --card-foreground: #153831;
+  --popover: #ffffff;
+  --popover-foreground: #153831;
+  --primary: #12715b;
+  --primary-foreground: #ffffff;
+  --secondary: #e5f0e9;
+  --secondary-foreground: #153831;
+  --muted: #edf1ec;
+  --muted-foreground: #54665f;
+  --accent: #d3f1de;
+  --accent-foreground: #0d5946;
+  --destructive: #ae3d35;
+  --border: #dce3dc;
+  --input: #bccac1;
+  --ring: #12715b;
+  --chart-1: #12715b;
+  --chart-2: #429b82;
+  --chart-3: #81bba3;
+  --chart-4: #aed5b9;
+  --chart-5: #d9e7d9;
+  --forest: #102f29;
+  --forest-muted: #a5c3b8;
+  --forest-line: #305047;
+  --mint: #c6f3c8;
+  --cream: #f8f4de;
+  --cream-ink: #756438;
+  --danger-bg: #fbeeea;
+  --success: #12715b;
+  --success-bg: #e5f0e9;
+  --video: #10241f;
+  --scrim: rgba(7,28,23,.76);
+  --range-band: color-mix(in srgb,var(--primary) 18%,transparent);
+  --font-sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
+  --font-mono: ui-monospace, Menlo, Consolas, monospace;
+  --fs-caption:13px; --fs-body:15px; --fs-lead:18px; --fs-title:22px;
+  --fs-metric:30px; --fs-stat:34px; --fs-clock:40px;
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px;
+  --space-5:20px; --space-6:24px; --space-8:32px;
+  --radius:20px; --dur-fast:150ms; --dur-base:200ms;
 }
-
-@media (prefers-reduced-motion: reduce) {
-  :root { --dur-fast: 0ms; --dur-base: 0ms; }
-  *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; }
+@media (prefers-reduced-motion:reduce) {
+  *,*::before,*::after { transition-duration:0ms !important; animation-duration:0ms !important; scroll-behavior:auto !important; }
 }
