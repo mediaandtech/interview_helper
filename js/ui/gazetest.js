@@ -1,3 +1,4 @@
+import { gazeView } from './views.js';
 // 사용자가 보정에 사용하지 않은 별도 표본으로 두 계산 방식을 직접 비교합니다.
 import { CALIB } from '../config.js';
 import { initGaze } from '../sensors/gaze.js';
@@ -14,21 +15,8 @@ const PREP_MS=2000, MEASURE_MS=3000, FRAME_MS=1000/30;
 let app,root,raf,sketch,st,generation=0;
 const $=id=>root.querySelector(`#${id}`);
 const pct=v=>`${v.toFixed(1)}%`;
-function template() {
-  return `<div class="gtest"><div class="cam" id="gt-cam"></div><div class="gt-side">
-    ${card({className:'gt-step',title:'시선 인식 점검',html:`<div class="stack">
-      <p class="hint" id="gt-count">보정과 별도의 확인 표본을 수집합니다.</p>
-      <h2 class="gt-title" id="gt-title">내 기기의 감지 결과 확인</h2>
-      <p id="gt-say">렌즈 보기, 네 방향, 눈 감김, 한쪽 눈 가림, 반복 정면 보기를 약 1분간 확인합니다. 두 방식이 일치해도 실제 정확도를 보장하지는 않습니다.</p>
-      <div id="gt-progress"></div><p id="gt-phase" role="status"></p>
-      <div class="gt-now">안정화: <b id="gt-now">—</b></div><p class="hint" id="gt-raw">원시: —</p>
-      <p class="hint" id="gt-source"></p>
-      <div class="inline">${button({label:'점검 시작',id:'gt-start'})}${button({label:'이 단계 건너뛰기',id:'gt-skip',variant:'outline',attrs:'hidden'})}</div>
-    </div>`})}
-    ${card({title:'실시간 관찰',html:'<pre class="gaze-values" id="gt-values">표본 대기</pre>'})}
-    ${card({title:'같은 표본으로 두 방식 비교',id:'gt-result',html:'<p class="hint">점검 후 방향 일치 비율, 시선 미측정 비율, 첫 일치까지 걸린 시간을 표시합니다. 수행 점수·통과 판정은 제공하지 않습니다.</p>'})}
-  </div></div>`;
-}
+function template() { return gazeView(); }
+
 function next(i,now) {
   st.i=i;st.phase='prep';st.phaseStart=now;st.frames=[];
   const step=GAZE_TEST_STEPS[i];

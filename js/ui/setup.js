@@ -1,3 +1,4 @@
+import { setupView } from './views.js';
 // ① 설정 화면: 발표 유형, 발표 시간, 준비 확인(보정)
 import { PRESETS, CALIB, GAZE } from '../config.js';
 import { calibrateVoice } from '../analysis/audio-math.js';
@@ -38,58 +39,7 @@ const sleepFrames = (ms, onFrame) => new Promise((resolve) => {
   raf = requestAnimationFrame(tick);
 });
 
-function template() {
-  const presets = segmented({ name: 'preset', value: state.presetKey,
-    options: Object.entries(PRESETS).map(([value, p]) => ({ value, label: p.label })) });
-  const timeCtl = `<div class="inline"><input class="input num" id="dur-m" type="number" min="1" max="30" aria-label="분"> 분
-    <input class="input num" id="dur-s" type="number" min="0" max="59" step="5" aria-label="초"> 초</div>`;
-  const rateCtl = `<div class="inline"><input class="input num" id="rate-min" type="number" step="10" aria-label="속도 참고 범위 최소"> ~
-    <input class="input num" id="rate-max" type="number" step="10" aria-label="속도 참고 범위 최대"> 음절/분</div>`;
-  const question = card({
-    title: '연습 이름표 (선택)',
-    description: '화면 속 내 목소리와 시선을 보면서 스스로 분석해요. 점수나 자동 평가는 없어요.',
-    html: `<div class="stack">
-      ${field({ label: '이름표 (같은 이름표끼리 비교해요)', forId: 'question',
-        controlHtml: '<textarea class="textarea" id="question" rows="2" maxlength="1000" placeholder="예: 지원 동기 · 1차"></textarea>' })}
-      ${field({ label: '참고 범위 프리셋', controlHtml: presets, hint: '초기 참고값이에요. 인터뷰의 정답 기준이 아니며 아래에서 바꿀 수 있어요.' })}
-      <div class="row2">
-        ${field({ label: '목표 시간', controlHtml: timeCtl, hint: '시간이 지나도 측정은 계속돼요.' })}
-        ${field({ label: '속도 참고 범위', controlHtml: rateCtl })}
-      </div>
-      <details class="disclosure"><summary>정면 참고 범위</summary><div class="row2">
-        ${field({ label: '좌우 (±도)', forId: 'gaze-yaw', controlHtml: '<input class="input num" id="gaze-yaw" type="number" min="1" max="90">' })}
-        ${field({ label: '위아래 (±도)', forId: 'gaze-pitch', controlHtml: '<input class="input num" id="gaze-pitch" type="number" min="1" max="90">' })}
-      </div><p class="hint">보정한 정면 자세를 기준으로 해요. 눈 방향은 별도의 검출 기준도 함께 써요.</p></details>
-      ${field({label:'눈 방향 계산 방식',forId:'eye-method',controlHtml:'<select class="select" id="eye-method"><option value="blendshape">기본 방식 · 눈 방향 신호</option><option value="iris">홍채 방식 · 실험</option></select>',hint:'홍채 방식은 개인별 보정 뒤 점검 화면에서 비교해 선택하세요. 정확도가 자동으로 보장되지는 않습니다.'})}
-    </div>`,
-  });
-  const recording = card({
-    title: '기록 방식',
-    html: `<div class="stack">
-      ${switchField({ id: 'record-answer', label: '화면과 목소리를 녹화·녹음해서 다시 보기', hint: '카운트다운 뒤 시작하고, 끝나면 장치를 꺼요.' })}
-      ${switchField({ id: 'focus-mode', label: '말하는 동안 측정값 숨기기', hint: '끝난 뒤 분석 화면에서 확인해요.', checked: false })}
-      <p class="hint">영상·음성·메모는 이 탭에만 보관돼요(최근 실제 기록 5개). 새로고침하거나 탭을 닫으면 사라지니 필요한 자료는 다운로드하세요. 외부 서비스로 보내지 않으며, 말하기 속도는 마이크 음량 변화로 추정해 실제 음절 수와 다를 수 있어요.</p>
-    </div>`,
-  });
-  const calib = card({
-    title: '준비 확인',
-    description: '약 10초 · 내 정면 자세와 평소 목소리를 기준으로 잡아요.',
-    className: 'calib',
-    html: `<div class="stack">
-      <div class="preview" id="setup-preview"></div>
-      ${checklist([
-        { key: 'face', title: '카메라를 정면으로 바라보세요' },
-        { key: 'voice', title: '아래 문장을 평소 목소리로 읽어 주세요', html: `<p class="quote">“${READ_TEXT}”</p>` },
-      ])}
-      <div class="inline"><button type="button" class="btn" data-variant="outline" id="precise-run" disabled>정밀 시선 보정</button><button type="button" class="btn" data-variant="ghost" id="precise-clear" disabled>기본 보정으로</button></div>
-      <p id="precise-status" class="hint" role="status">기본 준비 확인 뒤 렌즈·화면 중앙·네 방향을 추가 보정할 수 있습니다.</p>
-      <div class="progress" role="progressbar" aria-label="준비 확인 진행"><span style="width:0%"></span></div>
-    </div>`,
-    footerHtml: `${button({ label: '준비 확인 시작', id: 'calib-run', variant: 'outline' })}
-      <button type="button" class="btn" data-size="lg" id="start" disabled>모니터링 시작</button>`,
-  });
-  return `<div class="setup"><div class="setup-col">${question}${recording}</div><div class="setup-col">${calib}</div></div>`;
-}
+function template() { return setupView(state); }
 
 /** 상단 바 오른쪽: 보조 동작은 눈에 덜 띄게(ghost) */
 function topActions() {
@@ -140,6 +90,8 @@ function updateStart() {
   const voiceOk = !audio || state.calib.baseDb != null;
   const tried = state.tried;
   btn.disabled = !(tried && faceOk && voiceOk) || state.running;
+  root.querySelector('#setup-preview').dataset.ready = String(!!gaze);
+  root.querySelector('#start-hint').textContent = state.running ? '장치를 확인하고 있습니다. 안내에 따라 정면을 보고 문장을 읽어 주세요.' : !tried ? '먼저 카메라 · 마이크 확인을 진행해 주세요.' : !faceOk || !voiceOk ? '확인이 끝나지 않았습니다. 안내를 확인하고 다시 시도해 주세요.' : '준비가 끝났습니다. 시작하면 3초 후 측정을 시작합니다.';
   if (!tried) { btn.textContent = '모니터링 시작'; return; }
   const missing = [!gaze && '카메라', !audio && '마이크'].filter(Boolean);
   btn.textContent = missing.length ? `${missing.join('·')} 없이 모니터링 시작` : '모니터링 시작';
