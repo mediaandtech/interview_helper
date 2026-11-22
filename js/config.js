@@ -95,16 +95,16 @@ export const UI = {
   volumeGaugeDb: 15,  // 크기 게이지: 기준 대비 ±15 dB
 };
 
-/** 디자인 토큰 — css/tokens.css 의 html.dark 값과 같아야 합니다(p5 그림용). tests/tokens.test.js 가 확인 */
+/** 디자인 토큰 — css/tokens.css 의 :root 값과 같아야 합니다(p5 그림용). tests/tokens.test.js 가 확인 */
 export const THEME = {
-  bg: '#0a0a0a',
-  card: '#171717',
-  muted: '#262626',      // 면(배지·트랙)
-  border: '#2e2e2e',
-  text: '#fafafa',
-  mutedText: '#a1a1a1',  // 보조 글자
-  video: '#000000',
-  accent: '#93c5fd',     // 눈 방향 화살표·데모 안내 (= --chart-1)
+  bg: '#f4f3ee',
+  card: '#ffffff',
+  muted: '#edf1ec',      // 면(배지·트랙)
+  border: '#dce3dc',
+  text: '#153831',
+  mutedText: '#54665f',  // 보조 글자
+  video: '#10241f',
+  accent: '#12715b',     // 눈 방향 화살표·데모 안내 (= --chart-1)
 };
 
 /** 상태색 — 시선 인식 테스트(장치 점검) 화면에서만 사용. 측정값 화면은 중립 */
@@ -117,12 +117,12 @@ export const STATUS_COLORS = {
 
 /** 그래프 색 (= Basecoat --chart-*) */
 export const SERIES_COLORS = {
-  rate: '#93c5fd',
-  volume: '#3b82f6',
-  pitch: '#93c5fd',
-  gazeIn: '#2563eb',
-  gazeOut: '#a1a1a1',
-  gazeNone: '#262626',
-  yaw: '#93c5fd',
-  pitchAngle: '#3b82f6',
+  rate: '#12715b',
+  volume: '#429b82',
+  pitch: '#12715b',
+  gazeIn: '#81bba3',
+  gazeOut: '#879b90',
+  gazeNone: '#e1e9e1',
+  yaw: '#8bbba3',
+  pitchAngle: '#337b65',
 };
