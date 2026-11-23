@@ -7,7 +7,7 @@ import { formatStamp } from '../util/time.js';
 const C = { grid: THEME.border, muted: THEME.mutedText, text: THEME.text, panel: THEME.card,
   rate: SERIES_COLORS.rate, volume: SERIES_COLORS.volume, pitch: SERIES_COLORS.pitch,
   gazeIn: SERIES_COLORS.gazeIn, gazeOut: SERIES_COLORS.gazeOut, gazeNone: SERIES_COLORS.gazeNone,
-  band: 'rgba(250,250,250,0.08)' }; // 참고 범위 음영: 위치만 보여 주는 중립 회색
+  band: 'rgba(18,113,91,0.10)' }; // 참고 범위 음영: 위치만 보여 주는 중립 회색
 const LANES = [
   { key: 'gaze', label: '시선', h: 0.6 },
   { key: 'head', label: '고개', h: 0.4 },
@@ -49,12 +49,12 @@ export function createReportChart(parentEl, samples, report, settings, onSeek = 
 
     function series(key, value, lo, hi, color) {
       const l = lane(key);
-      p.noFill(); p.stroke(color); p.strokeWeight(1.5);
+      p.noFill(); p.stroke(color); p.strokeWeight(2.2);
       let prev = null;
       for (const s of samples) {
         const v = value(s);
         if (v == null) { prev = null; continue; }
-        const y = p.map(Math.max(lo, Math.min(hi, v)), lo, hi, l.y + l.h - 2, l.y + 2);
+        const y = p.map(Math.max(lo, Math.min(hi, v)), lo, hi, l.y + l.h - 5, l.y + 5);
         const x = X(s.t);
         if (prev && s.t - prev.t < 0.35) p.line(prev.x, prev.y, x, y);
         prev = { t: s.t, x, y };
@@ -72,7 +72,9 @@ export function createReportChart(parentEl, samples, report, settings, onSeek = 
       for (const l of lanes) {
         p.noStroke(); p.fill(C.muted); p.textSize(11); p.textAlign(p.RIGHT, p.CENTER);
         p.text(l.label, LEFT - 10, l.y + l.h / 2);
-        p.stroke(C.grid); p.strokeWeight(1); p.noFill(); p.rect(LEFT, l.y, p.width - LEFT - RIGHT, l.h);
+        p.fill(l.key === 'gaze' || l.key === 'head' || l.key === 'eye' ? THEME.muted : THEME.card);
+        p.rect(LEFT, l.y, p.width - LEFT - RIGHT, l.h, 4);
+        p.stroke(THEME.border); p.strokeWeight(1); p.noFill(); p.rect(LEFT, l.y, p.width - LEFT - RIGHT, l.h, 4);
       }
       // 유효 시간만 칠하고 프레임 공백을 다음 표본까지 늘리지 않습니다.
       for(const [key,read] of [['gaze',s=>s.frontal],['head',s=>s.head?.yaw==null?null:s.head.ok],['eye',s=>['closed','uncertain','none'].includes(s.eye?.dir)||!s.eye?null:s.eye.ok]]) {
@@ -96,7 +98,7 @@ export function createReportChart(parentEl, samples, report, settings, onSeek = 
       p.fill(C.muted); p.noStroke(); p.textSize(10); p.textAlign(p.CENTER, p.TOP);
       for (let t = 0; t <= dur; t += step) {
         p.text(formatStamp(t), X(t), p.height - BOTTOM + 6);
-        p.stroke(C.grid); p.line(X(t), TOP, X(t), p.height - BOTTOM); p.noStroke();
+        p.stroke(THEME.border); p.strokeWeight(1); p.line(X(t), TOP, X(t), p.height - BOTTOM); p.noStroke();
       }
     }
 
@@ -123,7 +125,7 @@ export function createReportChart(parentEl, samples, report, settings, onSeek = 
       const found=nearestSample(samples,t);
       const s=found && Math.abs(found.t-t)<=.2?found:{};
       const g=report.gazeTimeline?.find(g=>t>=g.start&&t<g.end);
-      p.stroke(C.text); p.strokeWeight(1); p.line(p.mouseX, TOP, p.mouseX, p.height - BOTTOM);
+      p.stroke('#64748b'); p.strokeWeight(1); p.drawingContext.setLineDash([4, 4]); p.line(p.mouseX, TOP, p.mouseX, p.height - BOTTOM); p.drawingContext.setLineDash([]);
 
       const lines = [
         `${formatStamp(t)} · 시선 ${g?.gazeReason?GAZE_REASON_TEXT[g.gazeReason]??g.gazeReason:g?.frontal == null ? '측정 불확실' : DIR[g.dir] ?? g.dir}`,
@@ -137,8 +139,8 @@ export function createReportChart(parentEl, samples, report, settings, onSeek = 
       const h = lines.length * 17 + 10;
       let x = p.mouseX + 12; if (x + w > p.width - 4) x = p.mouseX - 12 - w;
       const y = Math.min(p.height - h - 4, Math.max(4, p.mouseY - h / 2));
-      p.noStroke(); p.fill(0, 0, 0, 220); p.rect(x, y, w, h, 3);
-      lines.forEach((l, i) => { p.fill(i === 2 ? C.muted : C.text); p.text(l, x + 8, y + 6 + i * 17, w - 16); });
+      p.noStroke(); p.fill('#17243a'); p.rect(x, y, w, h, 7);
+      lines.forEach((l, i) => { p.fill(i === 2 ? '#b9c9e5' : THEME.card); p.text(l, x + 8, y + 6 + i * 17, w - 16); });
     };
   });
 }

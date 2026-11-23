@@ -1,7 +1,9 @@
 {
-  "name": "presentation-coach",
+  "name": "interview-studio-js",
+  "version": "5.0.0",
   "private": true,
   "type": "module",
+  "description": "순수 JavaScript 기반 면접 연습 셀프 모니터링 프로그램",
   "scripts": {
     "start": "node scripts/serve.mjs",
     "dev": "node scripts/serve.mjs",
@@ -15,7 +17,6 @@
     "prestart": "node scripts/check-env.mjs",
     "predev": "node scripts/check-env.mjs"
   },
-  "description": "브라우저에서 화상 인터뷰 속 내 목소리와 시선을 모니터링하고 스스로 분석하는 도구",
   "engines": {
     "node": ">=22"
   },

@@ -1,3 +1,4 @@
+import { reportView } from './views.js';
 // 스스로 분석: 로컬 재생, 관찰값, 사용자가 남긴 메모. 자동 평가 없음.
 import { buildReview, nearestSample } from '../analysis/review.js';
 import { GAZE_REASON_TEXT } from '../analysis/gaze-logic.js';
@@ -32,66 +33,7 @@ function player(session, id) {
     : emptyState({ title: '녹화가 없어요', text: session.media.message || '녹화 파일이 없습니다.' });
 }
 
-function template(session) {
-  const r = session.review;
-  const video = card({
-    className: 'video-card',
-    html: player(session, 'answer-player'),
-    footerHtml: `${button({ label: '녹화 파일 다운로드', id: 'download-media', variant: 'outline', size: 'sm', attrs: session.url ? '' : 'disabled' })}
-      ${button({ label: '이 녹화 삭제', id: 'delete-media', variant: 'ghost', size: 'sm', attrs: session.url ? '' : 'disabled' })}
-      <span class="hint">녹화는 원본 카메라 방향이라 미리보기와 좌우가 다를 수 있어요.</span>`,
-  });
-  const timeline = card({
-    title: '시간 흐름',
-    description: '그래프를 누르거나 아래 슬라이더로 위치를 고르면 영상이 그 위치로 이동해요. 시선·고개·눈 띠: 파랑 = 참고 범위 안, 회색 = 범위 밖, 어두운색 = 측정 불확실. 회색 음영은 내가 정한 참고 범위예요.',
-    html: `<div class="chart" id="report-chart" role="img" aria-label="정면 범위·속도·음량·음높이 시간 그래프. 아래 시간 선택으로 값을 읽을 수 있습니다."></div>
-      <div class="scrub"><label class="label" for="review-time">확인할 위치 <output id="review-clock">00:00</output></label>
-      <input class="input" id="review-time" type="range" min="0" max="${r.durationSec}" step="0.1" value="0"></div>
-      <p id="sample-description" class="hint sample-description"></p>`,
-  });
-  const summary = card({ title: '관찰 요약', description: '판정이 아닌 측정값이에요. 속도는 음량 변화 기반 추정이고, 정면 비율은 눈·고개 상태를 함께 측정할 수 있었던 시간만 써요.', html: `${stats(r)}<p class="hint gaze-detail">시선 측정 불확실·기록 공백 ${r.gazeUnknownSec.toFixed(1)}초</p>
-      <p class="hint">${Object.entries(r.gazeReasons).map(([reason,sec])=>`${esc(GAZE_REASON_TEXT[reason]??reason)} ${sec.toFixed(2)}초`).join(' · ')||'기록된 제외 사유 없음'}</p>
-      <p class="hint">동일 표본의 두 방식 방향 일치 ${n(r.gazeComparison.agreementPct,'%')} · 함께 측정 가능 ${r.gazeComparison.seconds.toFixed(1)}초. 일치율은 정확도나 인터뷰 평가를 의미하지 않습니다.</p>` });
-  const calibrationInfo=card({title:'사용한 시선 기준',html:`<p>${session.settings.calib?.kind==='precise'?'개인별 정밀 보정':'기본 정면 보정'} · ${session.settings.eyeMethod==='iris'?'홍채 방식(실험)':'기본 눈 방향 방식'}</p><p class="hint">고개 좌우 ±${session.settings.gazeLimits?.yawDeg??15}°, 위아래 ±${session.settings.gazeLimits?.pitchDeg??12}°. 렌즈와 화면 중앙은 정밀 보정에서 각각 기록합니다. 원시값·안정화값·눈별 상태·보정값은 측정값 다운로드에 함께 포함됩니다.</p>`});
-  const memo = card({
-    title: '메모',
-    html: tabs({ id: 'memo', selected: 'here', items: [
-      { id: 'here', label: '현재 위치', html: `<div class="stack">
-          ${field({ label: '이 위치에 메모', forId: 'marker-note', controlHtml: `<div class="inline"><input class="input" id="marker-note" type="text" maxlength="500" placeholder="직접 발견한 부분을 적어 주세요.">${button({ label: '메모 추가', id: 'add-marker', size: 'sm' })}</div>` })}
-          <ul id="markers" class="markers"></ul></div>` },
-      { id: 'all', label: '전체 메모', html: `<div class="stack">
-          ${field({ label: '전달한 핵심, 다시 볼 부분, 다음에 바꾸고 싶은 점', forId: 'reflection', controlHtml: `<textarea class="textarea" id="reflection" rows="5" maxlength="10000" placeholder="영상과 측정값을 보고 내 생각을 적어 보세요.">${esc(session.reflection)}</textarea>` })}
-          <p class="hint" id="note-state" role="status">메모는 현재 탭에서 유지돼요. 필요한 내용은 다운로드하세요.</p>
-          <div>${button({ label: '측정값·메모 다운로드', id: 'download-notes', variant: 'outline', size: 'sm' })}</div></div>` },
-    ] }),
-  });
-  const rows = r.intervals.map((i) => `<tr><td><button type="button" class="btn" data-variant="link" data-size="sm" data-seek="${i.start}">${formatClock(i.start)}</button></td><td>${esc(i.label)}</td><td>${i.dur.toFixed(1)}초</td></tr>`);
-  const intervals = card({
-    title: '참고 범위와 다른 구간',
-    description: '1초 이상 이어진 구간이에요. 개선할 부분인지는 재생해 보고 직접 판단하세요.',
-    html: r.intervals.length ? `<div class="intervals">${dataTable({ columns: ['시작', '내용', '길이'], rowsHtml: rows })}</div>`
-      : emptyState({ title: '표시할 구간이 없어요', text: '측정 부족일 수도 있으며 수행 평가를 의미하지 않아요.' }),
-  });
-  const comparison = card({
-    id: 'comparison', className: 'comparison',
-    title: '같은 이름표의 이전 기록과 비교',
-    html: `${field({ label: '현재 탭에서 기록한 세션 선택', forId: 'previous-answer', controlHtml: '<select class="select" id="previous-answer"><option value="">비교할 기록 선택</option></select>' })}
-      <div id="comparison-content"><p class="hint">같은 이름표로 다시 하면 이전 기록을 함께 볼 수 있어요. 데모는 비교 기록에 넣지 않아요.</p></div>`,
-  });
-  return `<div class="report review">
-    <div class="qline">${badge({ label: '이름표', variant: 'secondary' })}<b class="q">${esc(session.settings.question || '이름표 없음')}</b>
-      <span class="hint">${session.demo ? '데모 데이터 · ' : ''}${esc(session.date)} · 설정 ${formatClock(session.settings.durationSec)} / 실제 ${formatClock(r.durationSec)} · 자동 점수·평가 없음</span></div>
-    <div class="review-grid">
-      <section class="review-main">${video}${timeline}</section>
-      <aside class="review-side">${summary}${calibrationInfo}${memo}${intervals}</aside>
-    </div>
-    ${comparison}
-    <p class="hint">실제 기록은 최근 5개까지 현재 탭에만 보관해요. 새로고침하거나 탭을 닫으면 영상과 메모가 사라져요.</p>
-    <div class="report-actions">${button({ label: '이름표·설정 변경', id: 'setup', variant: 'outline' })}
-      ${button({ label: '분석 인쇄 / PDF', id: 'print', variant: 'outline' })}
-      ${button({ label: '보관한 기록·메모 모두 삭제', id: 'clear-history', variant: 'destructive' })}</div>
-  </div>`;
-}
+function template(session) { return reportView(session); }
 
 /** 상단 바: 비교로 이동 · 같은 조건으로 다시 하기 */
 function topActions() {
@@ -157,7 +99,7 @@ export function enter(appRef, payload = {}) {
   bindTabs(root);
   const top = document.getElementById('topbar-right');
   top.innerHTML = topActions();
-  top.querySelector('#goto-compare').onclick = () => { $('comparison').scrollIntoView({ behavior: 'smooth', block: 'start' }); $('previous-answer').focus({ preventScroll: true }); };
+  top.querySelector('#goto-compare').onclick = () => { const details=root.querySelector('.report-details'); if(details) details.open=true; $('comparison').scrollIntoView({ behavior: 'smooth', block: 'start' }); $('previous-answer').focus({ preventScroll: true }); };
   $('reflection').addEventListener('input', e => { current.reflection = e.target.value; $('note-state').textContent = '현재 탭에 메모를 반영했습니다.'; });
   $('add-marker').onclick = () => {
     const input = $('marker-note');
@@ -171,8 +113,8 @@ export function enter(appRef, payload = {}) {
   $('download-media').onclick = () => download(current.media.blob, `answer-${current.id}.${current.media.blob.type.includes('mp4') ? 'mp4' : 'webm'}`);
   $('delete-media').onclick = () => {
     const session = current;
-    leave(); release(session); session.media.message = '사용자가 녹화 파일을 삭제했습니다.';
-    enter(app);
+    stopPlayers(); release(session); session.media.message = '사용자가 녹화 파일을 삭제했습니다.';
+    app.go('report');
   };
   $('download-notes').onclick = () => {
     const { id,date,settings,samples,review,reflection,markers,demo } = current;
@@ -192,7 +134,7 @@ export function enter(appRef, payload = {}) {
     const option = document.createElement('option'); option.value=session.id; option.textContent=session.date; $('previous-answer').append(option);
   });
   $('previous-answer').disabled = !previous.length;
-  if (!current.demo && !current.settings.question) $('comparison-content').innerHTML = '<p class="hint">이름표를 넣고 시작하면 같은 이름표의 기록끼리 비교할 수 있어요.</p>';
+  if (!current.demo && !current.settings.question) $('comparison-content').innerHTML = '<p class="hint">제목을 넣고 시작하면 같은 제목의 기록끼리 비교할 수 있어요.</p>';
   $('previous-answer').onchange = e => {
     $('previous-player')?.pause();
     const session = previous.find(x=>x.id===e.target.value);

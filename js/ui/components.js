@@ -146,10 +146,40 @@ export function dataTable({ columns, rowsHtml }) {
   return `<div class="table-container"><table class="table"><thead><tr>${columns.map((c) => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${rowsHtml.join('')}</tbody></table></div>`;
 }
 
-const STEPS = [['setup', '준비'], ['practice', '모니터링'], ['report', '분석']];
+// 고정 사이드바는 실제 화면별 동작과 연결합니다. 연습 중에는 이탈을 막습니다.
+export function topBar({ step, pageName=step, hasReview=false }) {
+  const titles={setup:'연습 준비',practice:'답변 모니터링',report:'기록 돌아보기',gazetest:'시선 실험실'};
+  const current=pageName || 'gazetest';
+  const item=(key,num,label,enabled)=>`<button type="button" class="nav-item" data-shortcut="${key}" title="${label}"${current===key?' aria-current="step"':''}${enabled?'':' disabled'}><span class="nav-number" aria-hidden="true">${num}</span><span class="nav-text">${label}</span></button>`;
+  return `<aside class="studio-sidebar"><div class="studio-brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M10 13h5v17h-5zm8-6h5v23h-5zm8 13h5v10h-5z" fill="currentColor"/></svg></span><span class="brand-copy"><b>인터뷰 스튜디오</b><small>INTERVIEW STUDIO</small></span></div><p class="sidebar-label">MY PRACTICE SPACE</p><nav class="studio-nav" aria-label="연습 화면">${item('setup','01',titles.setup,current!=='practice')}${item('practice','02',titles.practice,false)}${item('report','03',titles.report,current!=='practice' && (hasReview || current==='report'))}</nav><div class="studio-tools"><div class="sidebar-divider"></div><p class="sidebar-label">TOOLS</p><nav class="studio-nav" aria-label="점검 도구">${item('gazetest','G',titles.gazetest,current!=='practice')}</nav></div><div class="sidebar-bottom"><div class="sidebar-note"><b>나만의 속도로 준비하세요.</b><p>수치는 참고 자료일 뿐입니다. 정답이나 점수보다, 내 답변의 변화를 발견해 보세요.</p></div><p class="sidebar-version">JAVASCRIPT / LOCAL FIRST</p></div></aside><div class="workspace-toolbar"><div class="workspace-breadcrumb"><span>나의 연습 공간</span><span aria-hidden="true">/</span><b>${titles[current]}</b></div><span class="workspace-status"><i></i>기기 안에서 처리</span><div id="topbar-right"></div></div>`;
+}
 
-/** 상단 바: 앱 이름 · 단계 · 화면별 버튼 자리(#topbar-right) */
-export function topBar({ step }) {
-  const steps = STEPS.map(([k, label]) => `<span${k === step ? ' aria-current="step"' : ''}>${label}</span>`).join('<span class="step-sep" aria-hidden="true">›</span>');
-  return `<div class="topbar"><div class="brand">셀프 모니터</div><nav class="steps" aria-label="진행 단계">${steps}</nav><div class="topbar-right" id="topbar-right"></div></div>`;
+export function relocateActions(screen) {
+  const actions=document.getElementById('topbar-right');
+  const slot=screen?.querySelector('.screen-actions-slot');
+  if(actions && slot) slot.append(actions);
+}
+
+export function bindStudioNavigation(app) {
+  const sidebar=document.querySelector('.studio-sidebar');
+  sidebar?.addEventListener('click',event=>{
+    const target=event.target.closest('[data-shortcut]');
+    if(!target || target.disabled || !sidebar.contains(target)) return;
+    const destination=target.dataset.shortcut;
+    if(destination===app.current) {
+      if(destination==='setup') document.getElementById('question')?.focus();
+      return;
+    }
+    if(app.current==='practice') return;
+    if(destination==='setup') {
+      const trigger=document.getElementById('setup') || document.getElementById('gt-exit');
+      trigger?.click();
+    } else if(destination==='report') {
+      const trigger=document.getElementById('last-review');
+      if(trigger) trigger.click(); else if(app.lastReview) app.go('report');
+    } else if(destination==='gazetest') {
+      const trigger=document.getElementById('gaze-test');
+      if(trigger) trigger.click(); else app.go('gazetest');
+    }
+  });
 }

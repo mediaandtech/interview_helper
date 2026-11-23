@@ -1,3 +1,4 @@
+import { practiceView } from './views.js';
 // ② 실시간 연습 화면
 // 센서 읽기(매 프레임) → 계산·기록(10Hz) → 화면 갱신(10Hz, 바뀐 것만) 순서로 분리되어 있습니다.
 import { UI, PITCH, RATE, AUDIO } from '../config.js';
@@ -27,43 +28,7 @@ const WAIT = '측정 대기';
 
 let app, root, raf, s, keyHandler;
 
-function template(settings) {
-  const total = formatClock(settings.durationSec);
-  return `
-  <div class="practice answer self-review ${settings.focusMode ? 'focus-mode' : ''}">
-    <div class="qline">
-      ${badge({ label: '이름표', variant: 'secondary' })}
-      <b class="q">${escapeHtml(settings.question || '이름표 없음')}</b>
-      <span class="hint" id="record-state" role="status">카운트다운 후 모니터링 시작</span>
-      <div class="clock" id="p-time" data-status="idle"><span class="clock-label" id="t-time">남은 시간</span>
-        <b id="v-time">${total}</b><span class="clock-total">/ ${total}</span></div>
-    </div>
-    <div id="pb-time"></div>
-    <div class="answer-body">
-      <div class="cam" id="cam" data-status="idle">
-        <div class="gaze-head">
-          <div class="gaze-pill" id="pill" data-status="idle">
-            <span class="dot"></span><span id="pill-text">${WAIT}</span>
-            <span class="cum" id="pill-cum" title="시선을 측정할 수 있었던 시간 중 정면 참고 범위 안의 비율">누적 —</span>
-          </div>
-        </div>
-        <div class="countdown" id="countdown"></div>
-        <div class="angles" id="angles" hidden></div>
-        <div class="demo-badge" id="demo-badge" hidden>DEMO<small id="demo-scene"></small></div>
-      </div>
-      <aside class="side">
-        ${metricCard({ id: 'p-rate', title: '말하기 속도 · 음절/분', numId: 'v-rate', stateId: 'l-rate',
-          extraHtml: `<div id="g-rate"></div><div class="metric-foot"><span>참고 ${settings.rateMin}~${settings.rateMax}</span><span id="n-rate"></span></div>` })}
-        ${metricCard({ id: 'p-vol', title: '목소리 크기', numId: 'v-vol', stateId: 'l-vol', extraHtml: '<div id="g-vol"></div>' })}
-        ${metricCard({ id: 'p-pitch', title: '음높이 변화 · 최근 10초', numId: 'v-pitch', stateId: 'l-pitch', extraHtml: '<div class="spark" id="spark"></div>' })}
-        <div class="card metric"><div class="metric-head"><span class="metric-title">고개 · 눈</span></div>
-          <div class="gaze-parts"><span class="badge" data-variant="outline" id="part-head" data-ok="true">고개 <b>—</b></span>
-          <span class="badge" data-variant="outline" id="part-eye" data-ok="true">눈 <b>—</b></span></div><p class="hint gaze-detail" id="gaze-quality"></p></div>
-      </aside>
-    </div>
-    <p class="focus-note hint">측정값은 숨겨져 있어요. 끝나면 분석 화면에서 영상과 함께 볼 수 있어요.</p>
-  </div>`;
-}
+function template(settings) { return practiceView(settings); }
 
 /** 상단 바: 녹화 표시 · 측정값 보기 · (데모) 실제 카메라 · 끝내기 */
 function topActions(settings, demo) {
@@ -193,8 +158,8 @@ function render({ tt, rate, volDelta, speaking, st }) {
   setText($('l-vol'), !app.sensors.audio ? WAIT : volDelta == null ? '발화 미검출' : '기준 대비 변화');
   setText($('v-vol'), volDelta == null ? '기준 대비 —' : `${volDelta >= 0 ? '+' : ''}${volDelta.toFixed(1)} dB`);
   s.ui.vol.update(volDelta, 'idle');
-  setText($('l-pitch'), st == null ? WAIT : `${st.toFixed(1)} 반음`);
-  setText($('v-pitch'), st == null ? '' : '음높이 변화량');
+  setText($('l-pitch'), st == null ? WAIT : '발화 중 검출한 음높이 변화');
+  setText($('v-pitch'), st == null ? '—' : `${st.toFixed(1)} 반음`);
   const diff = settings.durationSec - tt;
   setText($('t-time'), diff < 0 ? '설정 시간 이후' : '남은 시간');
   setText($('v-time'), `${diff < 0 ? '+' : ''}${formatClock(Math.abs(diff))}`);
