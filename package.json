@@ -7,7 +7,20 @@
   "scripts": {
     "start": "node scripts/serve.mjs",
     "dev": "node scripts/serve.mjs",
-    "test": "node --test tests/*.test.js"
+    "test": "node scripts/run-unit.mjs",
+    "test:browser": "node scripts/test-browser.mjs",
+    "test:browser:review": "node scripts/test-browser.mjs review",
+    "test:browser:gaze": "node scripts/test-browser.mjs gaze",
+    "test:browser:print": "node scripts/test-browser.mjs print",
+    "setup:browser": "playwright install chromium",
+    "doctor": "node scripts/check-env.mjs",
+    "prestart": "node scripts/check-env.mjs",
+    "predev": "node scripts/check-env.mjs"
   },
-  "engines": { "node": ">=22" }
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "playwright": "1.65.0"
+  }
 }
